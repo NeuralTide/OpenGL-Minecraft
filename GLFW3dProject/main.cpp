@@ -87,17 +87,6 @@ int main()
         return -1;
     }
 
-    Shader s1("4.1.texture.vs", "4.1.texture.fs");
-
-    //generate texture
-    unsigned int texture;
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     int width, height, nrChannels;
     unsigned char* data = stbi_load("dirt.jpg", &width, &height, &nrChannels, 0);
@@ -111,32 +100,16 @@ int main()
     {
         std::cout << "Failed to load texture" << std::endl;
     }
+
     stbi_image_free(data);
 
-
-
-   
-
-
-
     std::vector<Chunk> chunks;
-
     ChunkLoader chunkLoader = ChunkLoader();
-
-    
-
-    
-   
-    //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+  
     // render loop
     // -----------
     while (!glfwWindowShouldClose(window))
     {
-
-
-        
-     
-
         //calculate time
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -154,24 +127,14 @@ int main()
         glEnable(GL_MULTISAMPLE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-       
-
-
         glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
-
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 500.0f);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         glm::mat4 model = glm::mat4(1.0f);
-   
-
         //make sure all chunks should be loaded, if not, unload, genereate new chunks when needed and finally draw all active chunks.
-        chunkLoader.manageChunks(model, projection, view, cameraPos, window);
-       
-       
-       
-        glBindVertexArray(0); // no need to unbind it every time 
-
+        chunkLoader.manageChunks(model, projection, view, cameraPos, window);  
+  
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
         glfwSwapBuffers(window);
@@ -204,7 +167,6 @@ void processInput(GLFWwindow* window)
         cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
