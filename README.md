@@ -1,1 +1,1 @@
-# GLFW3dProject
+# Minecraft in C++
