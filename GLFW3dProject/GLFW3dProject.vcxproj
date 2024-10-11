@@ -130,17 +130,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Chunk.cpp" />
     <ClCompile Include="ChunkLoader.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="SimplexNoise.cpp" />
     <ClCompile Include="TextureManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkLoader.h" />
     <ClInclude Include="ChunkLoader.hpp" />
+    <ClInclude Include="Player.h" />
     <ClInclude Include="shader_s.h" />
     <ClInclude Include="SimplexNoise.h" />
     <ClInclude Include="TextureManager.h" />

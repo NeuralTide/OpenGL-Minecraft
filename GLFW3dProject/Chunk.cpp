@@ -651,3 +651,38 @@ using std::vector;
 
       
     }
+
+
+    float Chunk::d_below(glm::vec3 pos) {
+        int x = (int)pos.x;
+        int y = (int)pos.y;
+        int z = (int)pos.z;
+
+        int bp = x * y * z;
+        float distance = 0.0f;
+
+        while (blocks[bp] == 'A') {
+            bp--;
+            distance++;
+        }
+
+
+        return distance;
+    }
+
+    float Chunk::d_blockFront(glm::vec3 pos) {
+
+        return 0;
+    }
+
+    float Chunk::d_blockBehind(glm::vec3 pos) {
+        return 0;
+    }
+
+    float Chunk::d_blockLeft(glm::vec3 pos) {
+        return 0;
+    }
+
+    float Chunk::d_blockRight(glm::vec3 pos) {
+        return 0;
+    }

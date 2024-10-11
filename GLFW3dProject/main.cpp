@@ -15,6 +15,7 @@
 #include "Chunk.h"
 #include <vector>
 #include <list>
+#include "Player.h"
 
 extern "C"
 {
@@ -32,18 +33,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 // settings
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
-
-//camera stuff
-glm::vec3 cameraPos = glm::vec3(0.0f, 0.0f, 20.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);
-
-bool firstMouse = true;
-float yaw = -90.0f;
-float pitch = 0.0f;
-float lastX = 800.0f / 2.0f;
-float lastY = 600.0 / 2.0f;
-float fov = 45.0f;
+Player player;
 
 
 //time
@@ -52,6 +42,7 @@ float lastFrame = 0.0f;
 
 int main()
 {
+    player = Player(glm::vec3(0, 5, 0));
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -127,13 +118,13 @@ int main()
         glEnable(GL_MULTISAMPLE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+        glm::mat4 view = player.getCameraView();
         glm::mat4 projection = glm::mat4(1.0f);
         projection = glm::perspective(glm::radians(90.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 500.0f);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         glm::mat4 model = glm::mat4(1.0f);
         //make sure all chunks should be loaded, if not, unload, genereate new chunks when needed and finally draw all active chunks.
-        chunkLoader.manageChunks(model, projection, view, cameraPos, window);  
+        chunkLoader.manageChunks(model, projection, view, player.getPlayerPosition(), window);
   
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -160,13 +151,13 @@ void processInput(GLFWwindow* window)
 {
     const float cameraSpeed = 30.5f * deltaTime;
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        cameraPos += cameraSpeed * cameraFront;
+        player.updatePlayerPosition(player.getPlayerPosition() += cameraSpeed * player.getCameraFront());
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        cameraPos -= cameraSpeed * cameraFront;
+        player.updatePlayerPosition(player.getPlayerPosition() -= cameraSpeed * player.getCameraFront());
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        player.updatePlayerPosition(player.getPlayerPosition() -= glm::normalize(glm::cross(player.getCameraFront(), player.getCameraUp())) * cameraSpeed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        player.updatePlayerPosition(player.getPlayerPosition() += glm::normalize(glm::cross(player.getCameraFront(), player.getCameraFront())) * cameraSpeed);
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }
@@ -182,33 +173,5 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
-
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos;
-    lastX = xpos;
-    lastY = ypos;
-
-    float sensitivity = 0.1f;
-    xoffset *= sensitivity;
-    yoffset *= sensitivity;
-
-    yaw += xoffset;
-    pitch += yoffset;
-
-    if (pitch > 89.0f)
-        pitch = 89.0f;
-    if (pitch < -89.0f)
-        pitch = -89.0f;
-
-    glm::vec3 front;
-    front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-    front.y = sin(glm::radians(pitch));
-    front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-    cameraFront = glm::normalize(front);
+    player.updateCameraRotation(xpos, ypos);
 }

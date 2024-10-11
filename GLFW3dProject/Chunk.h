@@ -48,6 +48,14 @@ public:
 	void setChunkPos(int x, int y);
 	void setShaderMat4(char* attribute, glm::mat4 matrix);
 	void generateBufferData();
+
+	float d_below(glm::vec3 pos);
+
+	float d_blockFront(glm::vec3 pos);
+	float d_blockBehind(glm::vec3 pos);
+	float d_blockLeft(glm::vec3 pos);
+	float d_blockRight(glm::vec3 pos);
+
 };
 
 
