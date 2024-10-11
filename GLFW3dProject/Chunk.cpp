@@ -418,7 +418,7 @@ using std::vector;
                                fb = block_table.at(4);
                            if (blocks[cCounter] == 'B')
                                fb = block_table.at(5);
-
+   
                           
                                int noiseLeft = getLayeredNoise(x + posX, z + posZ - 1);
                                if ((z == 0 && y < noise && y >= noiseLeft) || (blocks[cCounter] != 'A' && (cCounter > 15 && blocks[cCounter - 16] == 'A'))) {
@@ -457,8 +457,8 @@ using std::vector;
 
                                //front
                                // x = 63
-                               int noiseFront = getLayeredNoise(x + posX - 1, z + posZ);
-                               if ((x == 0 && y < noise && y >= noiseFront) || (blocks[cCounter] != 'A' && cCounter < (bSize - 1023) && blocks[cCounter + 1024] == 'A')) {
+                               int noiseFront = getLayeredNoise(x + posX + 1, z + posZ);
+                               if ((x == 63 && y < noise && y >= noiseFront) || (blocks[cCounter] != 'A' && cCounter < (bSize - 1023) && blocks[cCounter + 1024] == 'A')) {
                                    float front_face[] = { 0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
@@ -473,8 +473,8 @@ using std::vector;
                                }
                                //back
                                // x = 0
-                               int noiseBack = getLayeredNoise(x + posX + 1, z + posZ);
-                               if ((x == 63 && y < noise && y >= noiseBack) || (blocks[cCounter] != 'A' && cCounter > 1023 && blocks[cCounter - 1024] == 'A')) {
+                               int noiseBack = getLayeredNoise(x + posX - 1, z + posZ);
+                               if ((x == 0 && y < noise && y >= noiseBack) || (blocks[cCounter] != 'A' && cCounter > 1023 && blocks[cCounter - 1024] == 'A')) {
                                    float back_face[] = { -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
