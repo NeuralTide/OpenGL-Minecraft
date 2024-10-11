@@ -103,11 +103,6 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_front = TextureManager::BEDROCK;
         block_table.at(block_table.size() - 1).c_back = TextureManager::BEDROCK;
 
-        
-
-       
-        
-
 
     }
 
@@ -424,9 +419,9 @@ using std::vector;
                            if (blocks[cCounter] == 'B')
                                fb = block_table.at(5);
 
-                           if (blocks[cCounter] != 'A') {
+                          
                                int noiseLeft = getLayeredNoise(x + posX, z + posZ - 1);
-                               if ((z == 0 && y < noiseLeft + 1) || (cCounter > 15 && blocks[cCounter - 16] == 'A')) {
+                               if ((z == 0 && y < noise && y >= noiseLeft) || (blocks[cCounter] != 'A' && (cCounter > 15 && blocks[cCounter - 16] == 'A'))) {
                                    //left face
                                    // v1, v2, v3, t1, t2, n1, n2 ,n3
                                    float left_face[] = { -0.5f + x + posX,    -0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
@@ -443,7 +438,7 @@ using std::vector;
                                }
 
                                int noiseRight = getLayeredNoise(x + posX, z + posZ + 1);
-                               if ((z == 63 && y > noiseRight + 1) || (cCounter < bSize && blocks[cCounter + 16] == 'A')) {
+                               if ((z == 63 && y < noise && y >= noiseRight) || (blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 16] == 'A')) {
                                    //right face
                                    //z=0
                                    float right_face[] = { -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
@@ -462,8 +457,8 @@ using std::vector;
 
                                //front
                                // x = 63
-                               int noiseFront = getLayeredNoise(x + posX + 1, z + posZ);
-                               if ((x == 63 && y > noiseFront + 1) || (cCounter < (bSize - 1023) && blocks[cCounter + 1024] == 'A')) {
+                               int noiseFront = getLayeredNoise(x + posX - 1, z + posZ);
+                               if ((x == 0 && y < noise && y >= noiseFront) || (blocks[cCounter] != 'A' && cCounter < (bSize - 1023) && blocks[cCounter + 1024] == 'A')) {
                                    float front_face[] = { 0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
@@ -478,8 +473,8 @@ using std::vector;
                                }
                                //back
                                // x = 0
-                               int noiseBack = getLayeredNoise(x + posX - 1, z + posZ);
-                               if ((x == 0 && y < noiseBack + 1) ||  (cCounter > 1023 && blocks[cCounter - 1024] == 'A')) {
+                               int noiseBack = getLayeredNoise(x + posX + 1, z + posZ);
+                               if ((x == 63 && y < noise && y >= noiseBack) || (blocks[cCounter] != 'A' && cCounter > 1023 && blocks[cCounter - 1024] == 'A')) {
                                    float back_face[] = { -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
@@ -492,7 +487,7 @@ using std::vector;
                                    pushToVertices(back_face, tf.getFaceCoords(fb.c_back, TextureManager::BACK));
                                    vCount += 6;
                                }
-                               if (cCounter < bSize && blocks[cCounter + 1] == 'A') {
+                               if (blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 1] == 'A') {
                                    //top
                                    float top_face[] = { -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
                                                          0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
@@ -507,7 +502,7 @@ using std::vector;
                                    vCount += 6;
                                }
                                //bottom
-                               if (cCounter > 0 && blocks[cCounter - 1] == 'A') {
+                               if (blocks[cCounter] != 'A' && cCounter > 0 && blocks[cCounter - 1] == 'A') {
                                    float bottom_face[] = { -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
@@ -520,7 +515,7 @@ using std::vector;
                                    pushToVertices(bottom_face, tf.getFaceCoords(fb.c_bottom, TextureManager::BOTTOM));
                                    vCount += 6;
                                }
-                           }
+                           
 
                            
                           
