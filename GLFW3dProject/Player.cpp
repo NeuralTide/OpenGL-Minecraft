@@ -29,6 +29,7 @@ glm::vec3 Player::getCameraFront() {
 void Player::updateCameraRotation(double xpos, double ypos) {
 	camera.updateCameraRotation(xpos, ypos);
 }
+
 glm::mat4 Player::getCameraView() {
 
 	return camera.getView();

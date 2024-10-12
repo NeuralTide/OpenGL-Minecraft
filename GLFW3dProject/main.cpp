@@ -40,9 +40,12 @@ Player player;
 float deltaTime = 0.0f;
 float lastFrame = 0.0f;
 
+
+unsigned int tex;
+
 int main()
 {
-    player = Player(glm::vec3(0, 5, 0));
+    player = Player(glm::vec3(0, 20, 0));
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -55,9 +58,13 @@ int main()
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
+    glfwWindowHint(GLFW_VISIBLE, GL_FALSE);
+    GLFWwindow* parentWindow = glfwCreateWindow(1, 1, "Main Window", NULL, NULL);
+
     // glfw window creation
     // --------------------
-    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Minecraft Clone", NULL, NULL);
+    glfwWindowHint(GLFW_VISIBLE, GL_TRUE);
+    GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "Minecraft Clone", NULL, parentWindow);
     if (window == NULL)
     {
         std::cout << "Failed to create GLFW window" << std::endl;
@@ -70,6 +77,7 @@ int main()
 
 
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
     // glad: load all OpenGL function pointers
     // ---------------------------------------
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -79,20 +87,36 @@ int main()
     }
 
 
+    glGenTextures(1, &tex);
+    glBindTexture(GL_TEXTURE_2D, tex);
+
+
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+
     int width, height, nrChannels;
-    unsigned char* data = stbi_load("dirt.jpg", &width, &height, &nrChannels, 0);
+    unsigned char* data = stbi_load("resources/mccatlas.jpg", &width, &height, &nrChannels, 0);
     if (data)
     {
+
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
-        
+
     }
     else
     {
+
         std::cout << "Failed to load texture" << std::endl;
     }
-
     stbi_image_free(data);
+
+
+    glActiveTexture(GL_TEXTURE0);
+   
 
     std::vector<Chunk> chunks;
     ChunkLoader chunkLoader = ChunkLoader();
@@ -124,7 +148,7 @@ int main()
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         glm::mat4 model = glm::mat4(1.0f);
         //make sure all chunks should be loaded, if not, unload, genereate new chunks when needed and finally draw all active chunks.
-        chunkLoader.manageChunks(model, projection, view, player.getPlayerPosition(), window);
+        chunkLoader.manageChunks(model, projection, view, player.getPlayerPosition(), parentWindow);
   
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------
@@ -132,10 +156,12 @@ int main()
         glfwPollEvents();
     }
 
+
+    chunkLoader.joinAllThreads();
     // optional: de-allocate all resources once they've outlived their purpose:
     // ------------------------------------------------------------------------
     chunkLoader.deleteChunkBuffers();
-
+    
 
 
     
@@ -157,7 +183,7 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
         player.updatePlayerPosition(player.getPlayerPosition() -= glm::normalize(glm::cross(player.getCameraFront(), player.getCameraUp())) * cameraSpeed);
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        player.updatePlayerPosition(player.getPlayerPosition() += glm::normalize(glm::cross(player.getCameraFront(), player.getCameraFront())) * cameraSpeed);
+        player.updatePlayerPosition(player.getPlayerPosition() += glm::normalize(glm::cross(player.getCameraFront(), player.getCameraUp())) * cameraSpeed);
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
 }

@@ -9,24 +9,20 @@ class Chunk
 {
 private:
 
-	int posX;
-	int posZ;
+
 	bool chunkBuild;
 	bool firstBake;
 	char* hashedBlocked;
 	size_t bSize = 65536;
-	char* blocks = (char*)malloc(bSize * sizeof(char));;
+
 	int vCount;
 	int cCounter;
-	bool baked;
-	bool bGen;
-	int v_size;	
-	float* vertices;
+	
 
-	std::vector<float> chunk_verts;
+
 
 	unsigned int VBO, VAO;
-	Shader s1;
+	
 	unsigned int texture;
 
 	int getLayeredNoise(int x, int z);
@@ -35,7 +31,19 @@ private:
 	bool loadTexture();
 
 public:
+	std::vector<float> chunk_verts;
+	char* blocks = (char*)malloc(bSize * sizeof(char));
+	bool baked;
+	bool bGen;
+	Shader s1;
+	int posX;
+	int posZ;
+	int v_size;
+	float* vertices;
+
+
 	Chunk();
+	Chunk(const Chunk& copy);
 	bool bakeChunk();
 	bool isBaked();
 

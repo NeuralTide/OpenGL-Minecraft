@@ -22,7 +22,7 @@ using std::vector;
     bool chunkBuild = false;
     bool firstBake = false;
     size_t bSize = 4096;
-    char* blocks = (char*)malloc(bSize * sizeof(char));
+    char* blocks;
    
     char* hashedBlocks;
     int vCount;
@@ -50,6 +50,21 @@ using std::vector;
     } b_look;
 
     vector<b_look> block_table;
+
+    /*
+        Constructor for a 16x16x16 Chunk
+
+    */
+    Chunk::Chunk() {
+        blocks = (char*)malloc(bSize * sizeof(char));
+        baked = false;
+        bGen = false;
+    }
+
+    Chunk::Chunk(const Chunk& copy) {
+       
+        *this = copy;
+    }
 
     void Chunk::populateBlockTable() {
 
@@ -169,7 +184,7 @@ using std::vector;
 
 
     bool Chunk::firstChunkGen() {
-
+      
         populateBlockTable();
         int position = 0;
 
@@ -536,8 +551,9 @@ using std::vector;
         vertices = &chunk_verts[0];
 
 
-      
+
         glGenVertexArrays(1, &VAO);
+
         glGenBuffers(1, &VBO);
 
         glBindVertexArray(VAO);
@@ -591,13 +607,12 @@ using std::vector;
             if (!bGen) {
                // loadTexture();
                 s1 = Shader("chunk_texture.vs", "chunk_texture.fs");
-                loadTexture();
+              
                 generateBufferData();
                 bGen = true;
             }
 
-            glActiveTexture(GL_TEXTURE0);
-            glBindTexture(GL_TEXTURE_2D, texture);
+          
             s1.use();
             s1.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
             s1.setVec3("lightPos", cameraPos + glm::vec3(40.0f, 40.0f, 40.0f));
@@ -640,17 +655,7 @@ using std::vector;
         s1.setMat4(attribute, matrix);
      }
 
-    /*
-    Constructor for a 16x16x16 Chunk
 
-*/
-    Chunk::Chunk() {
-        baked = false;
-        bGen = false;
-
-
-      
-    }
 
 
     float Chunk::d_below(glm::vec3 pos) {
