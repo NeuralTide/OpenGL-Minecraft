@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "glm/glm.hpp"
+#include "GLFW/glfw3.h"
 #include "Camera.h"
 
 class Player {
@@ -13,6 +14,7 @@ public:
 	Player(glm::vec3 position = glm::vec3(0, 0, 0));
 	void updatePlayerPosition(glm::vec3 newPos);
 	void updateCameraRotation(double xpos, double ypos);
+	void manageMovement(GLFWwindow* window, float deltaTime);
 	glm::vec3 getPlayerPosition();
 	glm::mat4 getCameraView();
 	glm::vec3 getCameraFront();

@@ -550,10 +550,7 @@ using std::vector;
 
         vertices = &chunk_verts[0];
 
-
-
         glGenVertexArrays(1, &VAO);
-
         glGenBuffers(1, &VBO);
 
         glBindVertexArray(VAO);

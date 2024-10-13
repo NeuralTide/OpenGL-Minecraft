@@ -175,17 +175,7 @@ int main()
 // ---------------------------------------------------------------------------------------------------------
 void processInput(GLFWwindow* window)
 {
-    const float cameraSpeed = 30.5f * deltaTime;
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        player.updatePlayerPosition(player.getPlayerPosition() += cameraSpeed * player.getCameraFront());
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        player.updatePlayerPosition(player.getPlayerPosition() -= cameraSpeed * player.getCameraFront());
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        player.updatePlayerPosition(player.getPlayerPosition() -= glm::normalize(glm::cross(player.getCameraFront(), player.getCameraUp())) * cameraSpeed);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        player.updatePlayerPosition(player.getPlayerPosition() += glm::normalize(glm::cross(player.getCameraFront(), player.getCameraUp())) * cameraSpeed);
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    player.manageMovement(window, deltaTime);
 }
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
