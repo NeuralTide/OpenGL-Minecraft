@@ -66,6 +66,10 @@ using std::vector;
         *this = copy;
     }
 
+    void Chunk::deleteChunkData() {
+        free(blocks);
+    }
+
     void Chunk::populateBlockTable() {
 
      

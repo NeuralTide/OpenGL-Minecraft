@@ -17,6 +17,8 @@ glm::vec3 pPos;
 glm::vec2 playerCurrentChunk;
 std::mutex vectorMutex;
 
+int frameCounter = 0;
+
 
 struct SharedVec chunks;
 
@@ -66,63 +68,76 @@ TODO:  GLFWwindow* mainWindow - deprecated, delete soon
 
 void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, GLFWwindow* mainWindow) 
 {
-
+	
 	glm::vec2 cCoords = calculateCurrentChunkCoords();
 	pPos = cameraPos;
-	
 
-	for (int i = 0; i < chunks.size(); i++)
-	{
+	frameCounter++;
 	
-		glm::vec2 cPos = chunks.getChunkPos(i);
-
-		int distance = sqrt((pPos.x - cPos.x) * (pPos.x - cPos.x) + (pPos.z - cPos.y) * (pPos.z - cPos.y));
-		
-		if (distance > 190) 
+	if (frameCounter > 25) {
+		frameCounter = 0;
+		for (int i = 0; i < chunks.size(); i++)
 		{
-			chunks.erase(i);
-		}
-	}
 
-	bool cNew = false;
+			glm::vec2 cPos = chunks.getChunkPos(i);
 
-	
+			int distance = sqrt((pPos.x - cPos.x + 32) * (pPos.x - cPos.x + 32) + (pPos.z - cPos.y + 32) * (pPos.z - cPos.y + 32));
 
-	if (chunks.size() < 18) 
-	{
-		
-		for (int x = -1; x < 2; x++)
-		{
-			for (int z = -1; z < 2; z++)
+			if (distance > 288)
 			{
-				if (!cNew) {
-					glm::vec2 cZone = cCoords + glm::vec2(x * 64, z * 64);
-					int chunksChecked = 0;
-					bool built = false;
-				
-					for (int i = 0; i < chunks.size(); i++)
-					{
-						if (cZone == chunks.getChunkPos(i)) {
-							built = true;
-						}
-					}
-					
-					if (!built) {
-						
-						
-						threads.push_back(std::thread(&ChunkLoader::threadBufferCreation, this, cZone, mainWindow));
-						threads.at(threads.size() - 1).join();
-					
-						cNew = true;
-
-					}
-
-					chunksChecked++;
-				}
+				chunks.erase(i);
 			}
 		}
-	}
 
+		bool cNew = false;
+
+
+	
+		if (chunks.size() < 81)
+		{
+			int cloop = 0;
+			int cx = 9;
+			int cr = 1;
+			while (cloop < cx * cx) {
+
+				for (int x = -cr; x < cr + 1; x++)
+				{
+					for (int z = -cr; z < cr + 1; z++)
+					{
+						cloop++;
+						if (!cNew) {
+							glm::vec2 cZone = cCoords + glm::vec2(x * 64, z * 64);
+							int chunksChecked = 0;
+							bool built = false;
+
+							for (int i = 0; i < chunks.size(); i++)
+							{
+								if (cZone == chunks.getChunkPos(i)) {
+									built = true;
+								}
+							}
+
+							if (!built) {
+
+
+								threads.push_back(std::thread(&ChunkLoader::threadBufferCreation, this, cZone, mainWindow));
+								threads.at(threads.size() - 1).detach();
+
+								cNew = true;
+
+							}
+
+							chunksChecked++;
+						}
+					}
+				}
+
+				cr++;
+			}
+		}
+
+
+	}
 
 
 	

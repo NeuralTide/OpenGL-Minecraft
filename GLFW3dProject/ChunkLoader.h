@@ -41,6 +41,8 @@ public:
 	{
 
 		std::scoped_lock<std::mutex> lock{ m };
+		v.at(index).deleteChunkData();
+		v.at(index).deleteBuffers();
 		v.erase(v.begin() + index);
 	
 	}

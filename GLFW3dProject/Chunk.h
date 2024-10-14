@@ -56,6 +56,7 @@ public:
 	void setChunkPos(int x, int y);
 	void setShaderMat4(char* attribute, glm::mat4 matrix);
 	void generateBufferData();
+	void deleteChunkData();
 
 	float d_below(glm::vec3 pos);
 
