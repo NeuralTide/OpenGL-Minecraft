@@ -26,6 +26,7 @@ private:
 	unsigned int texture;
 
 	int getLayeredNoise(int x, int z);
+	float getCaveNoise(int x, int y, int z);
 	void pushToVertices(float eArray[], std::vector<float>);
 	void populateBlockTable();
 	bool loadTexture();

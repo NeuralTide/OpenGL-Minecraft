@@ -47,6 +47,11 @@ public:
 	
 	}
 
+	Chunk at(int i) {
+		std::scoped_lock<std::mutex> lock{ m };
+		return v.at(i);
+	}
+
 	std::vector<Chunk>::iterator begin() {
 		
 		std::scoped_lock<std::mutex> lock{ m };
@@ -87,7 +92,7 @@ private:
 	SharedVec chunks;
 	glm::vec3 pPos;
 	glm::vec2 playerCurrentChunk;
-
+	std::vector<Chunk> chunkClone;
 	glm::vec2 calculateCurrentChunkCoords();
 	void checkChunkRange();
 	

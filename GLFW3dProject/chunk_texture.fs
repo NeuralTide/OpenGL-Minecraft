@@ -5,6 +5,7 @@ out vec4 FragColor;
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
+in float Ypos;
 
 
 uniform sampler2D ourTexture;
@@ -18,8 +19,7 @@ void main()
 {
     vec4 tColor = texture(ourTexture, TexCoord);
 
-    float ambientStrength = 0.7;
-    vec3 ambient = ambientStrength * lightColor;
+   
 
     // diffuse 
     vec3 norm = normalize(Normal);
@@ -27,9 +27,17 @@ void main()
     float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = diff * lightColor;
     
-       // specular
+    
+
+    float ambientStrength = 0.7;
+    if(Ypos < 60.0f){
+        ambientStrength = Ypos * .01;
+    }
+     vec3 ambient = ambientStrength * lightColor;
    
+
     vec3 result = (ambient + diffuse);
+    
 
     FragColor = vec4(result, 1.0f) * tColor;
 }

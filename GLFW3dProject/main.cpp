@@ -137,10 +137,17 @@ int main()
         // render
         // ------
 
-        glClearColor(.79f, .91f, .98f, 0.7f);
+        if (player.getCameraPostion().y > 70) {
+            glClearColor(.79f, .91f, .98f, 0.7f);
+        }
+        else {
+            glClearColor(0, 0, 0, 0);
+        }
+       
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_MULTISAMPLE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
         glm::mat4 view = player.getCameraView();
         glm::mat4 projection = glm::mat4(1.0f);

@@ -21,7 +21,7 @@ using std::vector;
     bool baked;
     bool chunkBuild = false;
     bool firstBake = false;
-    size_t bSize = 4096;
+    size_t bSize = 65536;
     char* blocks;
    
     char* hashedBlocks;
@@ -34,6 +34,7 @@ using std::vector;
     unsigned int VBO, VAO;
 
     vector<float> chunk_verts = {};
+    
 
     Shader s1;
     unsigned int texture;
@@ -73,6 +74,7 @@ using std::vector;
     void Chunk::populateBlockTable() {
 
      
+        // id = 0
 
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::DIRT;
@@ -82,6 +84,8 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_front = TextureManager::DIRT;
         block_table.at(block_table.size() - 1).c_back = TextureManager::DIRT;
 
+        // id = 1
+
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::GRASS_TOP;
         block_table.at(block_table.size() - 1).c_bottom = TextureManager::DIRT;
@@ -89,6 +93,8 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_right = TextureManager::GRASS_SIDE;
         block_table.at(block_table.size() - 1).c_front = TextureManager::GRASS_SIDE;
         block_table.at(block_table.size() - 1).c_back = TextureManager::GRASS_SIDE;
+
+        // id = 2
 
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::STONE;
@@ -98,6 +104,8 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_front = TextureManager::STONE;
         block_table.at(block_table.size() - 1).c_back = TextureManager::STONE;
 
+        // id = 3
+
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::LOG_TOP;
         block_table.at(block_table.size() - 1).c_bottom = TextureManager::LOG;
@@ -106,6 +114,8 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_front = TextureManager::LOG;
         block_table.at(block_table.size() - 1).c_back = TextureManager::LOG;
 
+        // id = 4
+
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::LEAF;
         block_table.at(block_table.size() - 1).c_bottom = TextureManager::LEAF;
@@ -113,6 +123,8 @@ using std::vector;
         block_table.at(block_table.size() - 1).c_right = TextureManager::LEAF;
         block_table.at(block_table.size() - 1).c_front = TextureManager::LEAF;
         block_table.at(block_table.size() - 1).c_back = TextureManager::LEAF;
+
+        // id = 5
 
         block_table.push_back(b_look());
         block_table.at(block_table.size() - 1).c_top = TextureManager::BEDROCK;
@@ -157,6 +169,12 @@ using std::vector;
         return true;
     }
 
+    float Chunk::getCaveNoise(int x, int y, int z) {
+
+        return SimplexNoise::noise(x * .03, y * .03, z * .03);
+
+    }
+
     int Chunk::getLayeredNoise(int x, int z) {
         int yLevel = 0;
 
@@ -179,7 +197,7 @@ using std::vector;
         int n12 = (int)((SimplexNoise::noise((x + 64) / 10, (z + 64) / 10) + 1));
        
 
-        int noise = (((n1 + n2 + n3 + n4 + n5 + n5 + n6 + n7) / 2) + ((n8 + n10 + n11 + n12) /2 ) + 2);
+        int noise = (((n1 + n2 + n3 + n4 + n5 + n5 + n6 + n7)) + ((n8 + n10 + n11 + n12)) + 2);
        
        
 
@@ -192,10 +210,12 @@ using std::vector;
         populateBlockTable();
         int position = 0;
 
-        for (int x = 0; x < 64; x++)
+        for (int x = 0; x < 16; x++)
         {
-            for (int z = 0; z < 64; z++)
+            for (int z = 0; z < 16; z++)
             {
+
+
                     int yLevel = 0;
                     int noise = getLayeredNoise(x + posX, z + posZ);
               
@@ -203,25 +223,43 @@ using std::vector;
                     yLevel++;
                     position++;
 
+                    for (size_t i = 0; i < 60; i++) {
+
+                        if (getCaveNoise(x + posX, yLevel, z + posZ) > 0) {
+                            blocks[position] = 'S';
+
+                        }
+                        else {
+                            blocks[position] = 'A';
+                        }
+
+                      
+                        yLevel++;
+                        position++;
+                    }
+
 
 
                     for (int y = 1; y < noise -1; y++)
                     {
-                      
-                        if (y > 5) {
-                            blocks[position] = 'D';
+                        if (getCaveNoise(x + posX, yLevel, z + posZ) > 0.0f) {
+                        
+                                blocks[position] = 'D';
+                            
+                          
+                           
                         }
                         else {
-                            blocks[position] = 'S';
+                            blocks[position] = 'A';
                         }
+
                         yLevel++;
                         position++;
-                     
                     }
 
                    
         
-                    int rand = std::rand() % 1000;
+                    int rand = std::rand() % 100;
 
                     /*
                     *   Tree Spawner 
@@ -234,10 +272,14 @@ using std::vector;
 
 
                     */
-                    if (rand < 2 && position > 2048 && position < 63488 && x > 3 && x < 61 && z > 3 && z < 61) {
+                    if (blocks[position - 1] != 'A' && yLevel < 240 && rand < 2 && position > 8192 && position < 63488 && x > 3 && x < 14 && z > 3 && z < 14) {
                        
+                        
                         if (yLevel < 16) {
-                            blocks[position] = 'D';
+                           
+                           blocks[position] = 'D';
+                                
+                        
                             yLevel++;
                             position++;
                         }
@@ -246,17 +288,17 @@ using std::vector;
 
                             //overwritte, delete
                             if (i > 1) {
-                                blocks[position - 16] = 'F';
-                                blocks[position - 32] = 'F';
+                                blocks[position - 256] = 'F';
+                                blocks[position - 512] = 'F';
 
-                                blocks[position + 16] = 'F';
-                                blocks[position + 32] = 'F';
+                                blocks[position + 256] = 'F';
+                                blocks[position + 512] = 'F';
 
-                                blocks[position + 1024] = 'F';
-                                blocks[position + 2048] = 'F';
+                                blocks[position + 4096] = 'F';
+                                blocks[position + 8192] = 'F';
 
-                                blocks[position - 1024] = 'F';
-                                blocks[position - 2048] = 'F';
+                                blocks[position - 4096] = 'F';
+                                blocks[position - 8192] = 'F';
 
 
                             }
@@ -273,17 +315,25 @@ using std::vector;
                         
                     }
                     else {
-                        blocks[position] = 'G';
+
+                        if (getCaveNoise(x + posX, yLevel, z + posZ) > -.4f) {
+                            blocks[position] = 'G';
+
+                        }
+                        else {
+                            blocks[position] = 'A';
+                        }
                         yLevel++;
                         position++;
+
                     }
                  
 
                    
 
-                    if (yLevel < 16) {
+                    if (yLevel < 256) {
                         
-                        for (int i = yLevel; i < 16; i++) {
+                        for (int i = yLevel; i < 256; i++) {
                           
                                
                                 blocks[position] = 'A';
@@ -297,52 +347,52 @@ using std::vector;
             }
         }
 
-        /*
-            Loops over all the blocks inorder to properly spawn the leaves of the trees
-        */
+
+
+        
         position = 0;
-        for (int x = 0; x < 64; x++)
+        for (int x = 0; x < 16; x++)
         {
-            for (int z = 0; z < 64; z++)
+            for (int z = 0; z < 16; z++)
             {
                 int noise = getLayeredNoise(x + posX, z + posZ);
 
-                for (int y = 0; y < 16; y++) {
+                for (int y = 0; y < 256; y++) {
 
                     if (blocks[position] == 'L') {
-                        if (y > noise + 1) {
-                            blocks[position - 16] = 'F';
-                            blocks[position - 32] = 'F';
+                        if (y > noise + 1 + 60) {
+                            blocks[position - 256] = 'F';
+                            blocks[position - 512] = 'F';
 
-                            blocks[position + 16] = 'F';
-                            blocks[position + 32] = 'F';
+                            blocks[position + 256] = 'F';
+                            blocks[position + 512] = 'F';
 
-                            blocks[position + 1024] = 'F';
-                            blocks[position + 2048] = 'F';
+                            blocks[position + 4096] = 'F';
+                            blocks[position + 8192] = 'F';
 
-                            blocks[position - 1024] = 'F';
-                            blocks[position - 2048] = 'F';
+                            blocks[position - 4096] = 'F';
+                            blocks[position - 8192] = 'F';
 
 
-                            blocks[position + 1024 + 16] = 'F';
-                            blocks[position + 2048 + 16] = 'F';
-                            blocks[position + 1024 + 32] = 'F';
-                            blocks[position + 2048 + 32] = 'F';
+                            blocks[position + 4096 + 256] = 'F';
+                            blocks[position + 8192 + 256] = 'F';
+                            blocks[position + 4096 + 512] = 'F';
+                            blocks[position + 8192 + 512] = 'F';
 
-                            blocks[position + 1024 - 16] = 'F';
-                            blocks[position + 2048 - 16] = 'F';
-                            blocks[position + 1024 - 32] = 'F';
-                            blocks[position + 2048 - 32] = 'F';
+                            blocks[position + 4096 - 256] = 'F';
+                            blocks[position + 8192 - 256] = 'F';
+                            blocks[position + 4096 - 512] = 'F';
+                            blocks[position + 8192 - 512] = 'F';
 
-                            blocks[position - 1024 - 32] = 'F';
-                            blocks[position - 2048 - 32] = 'F';
-                            blocks[position - 1024 - 16] = 'F';
-                            blocks[position - 2048 - 16] = 'F';
+                            blocks[position - 4096 - 512] = 'F';
+                            blocks[position - 8192 - 512] = 'F';
+                            blocks[position - 4096 - 256] = 'F';
+                            blocks[position - 8192 - 256] = 'F';
 
-                            blocks[position - 1024 + 32] = 'F';
-                            blocks[position - 2048 + 32] = 'F';
-                            blocks[position - 1024 + 16] = 'F';
-                            blocks[position - 2048 + 16] = 'F';
+                            blocks[position - 4096 + 512] = 'F';
+                            blocks[position - 8192 + 512] = 'F';
+                            blocks[position - 4096 + 256] = 'F';
+                            blocks[position - 8192 + 256] = 'F';
 
 
                          
@@ -351,20 +401,20 @@ using std::vector;
                         }
                     }
                   
-                    if (blocks[position - 1] == 'L' && y == noise + 4 ) {
+                    if (blocks[position - 1] == 'L' && y == noise + 4 + 60) {
                         blocks[position] = 'F';
                         blocks[position + 1] = 'F';
                     }
 
                     if (blocks[position - 1] == 'L' && blocks[position] == 'F') {
-                        blocks[position + 1024] = 'F';
-                        blocks[position - 1024] = 'F';
-                        blocks[position - 16] = 'F';
-                        blocks[position + 16] = 'F';
-                        blocks[position + 1024 + 16] = 'F';
-                        blocks[position + 1024 - 16] = 'F';
-                        blocks[position - 1024 - 16] = 'F';
-                        blocks[position - 1024 + 16] = 'F';
+                        blocks[position + 4096] = 'F';
+                        blocks[position - 4096] = 'F';
+                        blocks[position - 256] = 'F';
+                        blocks[position + 256] = 'F';
+                        blocks[position + 4096 + 256] = 'F';
+                        blocks[position + 4096 - 256] = 'F';
+                        blocks[position - 4096 - 256] = 'F';
+                        blocks[position - 4096 + 256] = 'F';
                     }
 
                 
@@ -374,6 +424,8 @@ using std::vector;
                }
             }
         }
+       
+        
 
         return true;
     }
@@ -419,9 +471,9 @@ using std::vector;
     bool Chunk::genChunkMesh() {
         TextureManager tf = TextureManager(5);
         cCounter = 0;
-        for (int x = 0; x < 64; x++) {
-            for (int z = 0; z < 64; z++) { 
-                for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            for (int z = 0; z < 16; z++) { 
+                for (int y = 0; y < 256; y++) {
                             int noise = getLayeredNoise(x + posX, z + posZ);
                    
                            b_look fb;
@@ -439,8 +491,9 @@ using std::vector;
                                fb = block_table.at(5);
    
                           
-                               int noiseLeft = getLayeredNoise(x + posX, z + posZ - 1);
-                               if ((z == 0 && y < noise && y >= noiseLeft) || (blocks[cCounter] != 'A' && (cCounter > 15 && blocks[cCounter - 16] == 'A'))) {
+                               int noiseLeft = getLayeredNoise(x + posX, z + posZ - 1) + 60;
+                               int caveNoiseLeft = getCaveNoise(x + posX, y, z + posZ - 1);
+                               if ((z == 0 && caveNoiseLeft <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && (cCounter > 255 && blocks[cCounter - 256] == 'A'))) {
                                    //left face
                                    // v1, v2, v3, t1, t2, n1, n2 ,n3
                                    float left_face[] = { -0.5f + x + posX,    -0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
@@ -456,8 +509,10 @@ using std::vector;
                                    vCount += 6;
                                }
 
-                               int noiseRight = getLayeredNoise(x + posX, z + posZ + 1);
-                               if ((z == 63 && y < noise && y >= noiseRight) || (blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 16] == 'A')) {
+                               int noiseRight = getLayeredNoise(x + posX, z + posZ + 1) + 60;
+                               int caveNoiseRight = getCaveNoise(x + posX, y, z + posZ + 1);
+
+                               if ((z == 15 && caveNoiseRight <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < bSize - 256 && blocks[cCounter + 256] == 'A')) {
                                    //right face
                                    //z=0
                                    float right_face[] = { -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
@@ -476,8 +531,9 @@ using std::vector;
 
                                //front
                                // x = 63
-                               int noiseFront = getLayeredNoise(x + posX + 1, z + posZ);
-                               if ((x == 63 && y < noise && y >= noiseFront) || (blocks[cCounter] != 'A' && cCounter < (bSize - 1023) && blocks[cCounter + 1024] == 'A')) {
+                               int noiseFront = getLayeredNoise(x + posX + 1, z + posZ) + 60;
+                               int caveNoiseFront = getCaveNoise(x + posX + 1, y, z + posZ);
+                               if ((x == 15  && caveNoiseFront <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < (bSize - 4096) && blocks[cCounter + 4096] == 'A')) {
                                    float front_face[] = { 0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
@@ -492,8 +548,9 @@ using std::vector;
                                }
                                //back
                                // x = 0
-                               int noiseBack = getLayeredNoise(x + posX - 1, z + posZ);
-                               if ((x == 0 && y < noise && y >= noiseBack) || (blocks[cCounter] != 'A' && cCounter > 1023 && blocks[cCounter - 1024] == 'A')) {
+                               int noiseBack = getLayeredNoise(x + posX - 1, z + posZ) + 60;
+                               int caveNoiseBack = getCaveNoise(x + posX - 1, y, z + posZ);
+                               if ((x == 0 && caveNoiseBack <= 0 && blocks[cCounter] != 'A')  || (blocks[cCounter] != 'A' && cCounter > 4095 && blocks[cCounter - 4096] == 'A')) {
                                    float back_face[] = { -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,

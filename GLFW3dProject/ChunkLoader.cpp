@@ -17,7 +17,10 @@ glm::vec3 pPos;
 glm::vec2 playerCurrentChunk;
 std::mutex vectorMutex;
 
+std::vector<Chunk> clonedChunks;
+
 int frameCounter = 0;
+int frameCounter2 = 0;
 
 
 struct SharedVec chunks;
@@ -73,17 +76,30 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 	pPos = cameraPos;
 
 	frameCounter++;
+	frameCounter2++;
+
 	
-	if (frameCounter > 25) {
+	if (frameCounter == 70) {
+		for (size_t i = 0; i < threads.size(); i++)
+		{
+			if (threads.size() > 0 && threads.at(0).joinable()) {
+				threads.at(i).join();
+				threads.erase(threads.begin());
+			}
+
+		
+		}
+		
+
 		frameCounter = 0;
 		for (int i = 0; i < chunks.size(); i++)
 		{
 
 			glm::vec2 cPos = chunks.getChunkPos(i);
 
-			int distance = sqrt((pPos.x - cPos.x + 32) * (pPos.x - cPos.x + 32) + (pPos.z - cPos.y + 32) * (pPos.z - cPos.y + 32));
+			int distance = sqrt((pPos.x - cPos.x + 8) * (pPos.x - cPos.x + 8) + (pPos.z - cPos.y + 8) * (pPos.z - cPos.y + 8));
 
-			if (distance > 288)
+			if (distance > 168)
 			{
 				chunks.erase(i);
 			}
@@ -93,10 +109,11 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 
 
 	
-		if (chunks.size() < 81)
+		if (chunks.size() < 400)
 		{
+			
 			int cloop = 0;
-			int cx = 9;
+			int cx = 20;
 			int cr = 1;
 			while (cloop < cx * cx) {
 
@@ -106,7 +123,7 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 					{
 						cloop++;
 						if (!cNew) {
-							glm::vec2 cZone = cCoords + glm::vec2(x * 64, z * 64);
+							glm::vec2 cZone = cCoords + glm::vec2(x * 16, z * 16);
 							int chunksChecked = 0;
 							bool built = false;
 
@@ -118,13 +135,10 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 							}
 
 							if (!built) {
-
-
 								threads.push_back(std::thread(&ChunkLoader::threadBufferCreation, this, cZone, mainWindow));
-								threads.at(threads.size() - 1).detach();
-
+								
 								cNew = true;
-
+								
 							}
 
 							chunksChecked++;
@@ -136,11 +150,16 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 			}
 		}
 
-
+		
 	}
 
 
+
+
+
 	
+	
+
 	for (size_t i = 0; i < chunks.size(); i++)
 	{
 		chunks.drawChunk(i, model, projection, view, cameraPos);
@@ -177,7 +196,7 @@ glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
 	int currentX = (int)pPos.x;
 
 
-	while (currentZ % 64 != 0) {
+	while (currentZ % 16 != 0) {
 		if (currentZ > 0) {
 			currentZ -= 1;
 			
@@ -189,7 +208,7 @@ glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
 
 	}
 
-	while (currentX % 64 != 0) {
+	while (currentX % 16 != 0) {
 		if (currentX > 0) {
 			currentX -= 1;
 
