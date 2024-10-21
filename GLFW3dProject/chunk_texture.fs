@@ -29,7 +29,7 @@ void main()
     
     
 
-    float ambientStrength = 0.7;
+    float ambientStrength = 0.8;
     if(Ypos < 60.0f){
         ambientStrength = Ypos * .01;
     }

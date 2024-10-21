@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\Andrew\Downloads\PerlinNoise-master\PerlinNoise-master;C:\Users\Andrew\Downloads\stb;C:\Users\Andrew\Downloads\glm-1.0.1\glm-1.0.1;C:\Users\Andrew\Downloads\linmath.h-master\include;C:\Users\Andrew\Downloads\glad\include;C:\Users\Andrew\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\Andrew\Desktop\boost_1_86_0;C:\Users\Andrew\Downloads\PerlinNoise-master\PerlinNoise-master;C:\Users\Andrew\Downloads\stb;C:\Users\Andrew\Downloads\glm-1.0.1\glm-1.0.1;C:\Users\Andrew\Downloads\linmath.h-master\include;C:\Users\Andrew\Downloads\glad\include;C:\Users\Andrew\Downloads\glfw-3.4.bin.WIN64\glfw-3.4.bin.WIN64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -136,24 +136,30 @@
     <ClCompile Include="ChunkLoader.cpp" />
     <ClCompile Include="Feature.cpp" />
     <ClCompile Include="glad.c" />
+    <ClCompile Include="LayeredNoise.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="SimplexNoise.cpp" />
     <ClCompile Include="TextureManager.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
     <ClInclude Include="Chunk.h" />
     <ClInclude Include="ChunkLoader.h" />
     <ClInclude Include="Feature.h" />
+    <ClInclude Include="LayeredNoise.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="shader_s.h" />
     <ClInclude Include="SimplexNoise.h" />
     <ClInclude Include="TextureManager.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="chunk_texture.fs" />
     <None Include="chunk_texture.vs" />
+    <None Include="fog_shader.fs" />
+    <None Include="fog_shader.vs" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -3,8 +3,7 @@
 
 
 
-std::vector<std::vector<int>> f_vec;
-enum Feature::feature_type { OAK_TREE = 0 };
+
 
 
 void Feature::createFeature(int x, int y, int z, feature_type ft) {
@@ -12,17 +11,55 @@ void Feature::createFeature(int x, int y, int z, feature_type ft) {
 	{
 	case Feature::OAK_TREE:
 		createTreeFeature(x, y, z);
-	default:
 		break;
+	
 	}
 
 }
 void Feature::createTreeFeature(int x, int y, int z) {
-	std::vector<int> l1 = {	0, 0, 0, 0, 0,
-							0, 0, 0, 0				};
+	
+
+	int xc = -2;
+	int zc = -2;
+	int counter = 0;
+	for (size_t i = 0; i < oak_tree_l1.size(); i++)
+	{
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y, z + zc), oak_tree_l1.at(i)));
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y + 1, z + zc), oak_tree_l2.at(i)));
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y + 2, z + zc), oak_tree_l3.at(i)));
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y + 3, z + zc), oak_tree_l4.at(i)));
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y + 4, z + zc), oak_tree_l5.at(i)));
+		fmap.emplace(std::make_pair(glm::vec3(x + xc, y + 5, z + zc), oak_tree_l6.at(i)));
+		counter++;
+		xc++;
+
+		if (counter >= 5) {
+			zc++;
+			xc = -2;
+			counter = 0;
+		}
+
+		
+		
+		
+	}
+}
+
+char Feature::getFeatureBlock(int x, int y, int z) {
+
+	auto it = fmap.find(glm::vec3(x, y, z));
+
+	if (it != fmap.end()) {
+		return it->second;
+	}
+	else {
+		return '!';
+	}
+	
 }
 
 
-Feature::Feature(int x, int y, int z, feature_type ft, int chunkDimX, int chunkDimY, int chunkDimZ) {
-	createFeature(x, y, z, ft);
+Feature::Feature() {
+	
 }
+

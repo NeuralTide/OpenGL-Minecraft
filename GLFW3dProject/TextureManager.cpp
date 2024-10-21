@@ -6,7 +6,7 @@
 
 
 
-enum blocks { DIRT, GRASS_SIDE, GRASS_TOP, SAND, STONE, BEDROCK, LOG, LOG_TOP, LEAF};
+enum blocks { DIRT, GRASS_SIDE, GRASS_TOP, SAND, STONE, BEDROCK, LOG, LOG_TOP, LEAF, SNOW};
 enum faces { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 int size;
 const float OFFSET = 0.2f;
@@ -101,15 +101,15 @@ std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
 	case DIRT:
 		for (int i = 0; i < 12; i++)
 		{
-		
+
 			if (i % 2 == 0)
 				r[i] = (r[i] / size) + (OFFSET * 5);
 			if (i % 2 != 0)
 				r[i] = (r[i] / size) - OFFSET;
-		
+
 		}
 		break;
-	case GRASS_SIDE: 
+	case GRASS_SIDE:
 
 
 
@@ -117,20 +117,20 @@ std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
 		{
 			//y
 			if (i % 2 == 0)
-				r[i] = (r[i] / (size + .1)) + (OFFSET) + 0.00125f;
+				r[i] = (r[i] / (size + .1)) + (OFFSET)+0.00125f;
 
 			//x
 			if (i % 2 != 0)
 				r[i] = (r[i] / (size + .1)) - (OFFSET);
-		
+
 		}
 		break;
 	case GRASS_TOP:
 		for (size_t i = 0; i < 12; i++)
 		{
 			//y
-			if (i % 2 == 0) 
-				r[i] = (r[i] / (size + .1)) + (OFFSET * 2)  + 0.00125f;
+			if (i % 2 == 0)
+				r[i] = (r[i] / (size + .1)) + (OFFSET * 2) + 0.00125f;
 
 			//x
 			if (i % 2 != 0)
@@ -175,7 +175,7 @@ std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
 		{
 			//y
 			if (i % 2 == 0)
-				r[i] = (r[i] / (size + .1)) + (OFFSET) + 0.00125f;
+				r[i] = (r[i] / (size + .1)) + (OFFSET)+0.00125f;
 
 			//x
 			if (i % 2 != 0)
@@ -207,6 +207,19 @@ std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
 		}
 		break;
 
+
+	case SNOW:
+		for (size_t i = 0; i < 12; i++)
+		{
+			//y
+			if (i % 2 == 0)
+				r[i] = (r[i] / (size + .1)) + (OFFSET * 4) + 0.00125f;
+
+			//x
+			if (i % 2 != 0)
+				r[i] = (r[i] / (size + .1)) - (OFFSET * 2);
+		}
+		break;
 	}
 
 	for (int i = 0; i < 12; i++)

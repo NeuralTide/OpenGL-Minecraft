@@ -42,6 +42,12 @@
     <ClCompile Include="Feature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="LayeredNoise.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader_s.h">
@@ -68,9 +74,17 @@
     <ClInclude Include="Feature.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="ThreadPool.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+    <ClInclude Include="LayeredNoise.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="chunk_texture.fs" />
     <None Include="chunk_texture.vs" />
+    <None Include="fog_shader.vs" />
+    <None Include="fog_shader.fs" />
   </ItemGroup>
 </Project>

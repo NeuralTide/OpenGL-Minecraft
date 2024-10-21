@@ -16,6 +16,8 @@
 #include <vector>
 #include <list>
 #include "Player.h"
+#include "ThreadPool.h"
+#include "Feature.h";
 
 extern "C"
 {
@@ -34,6 +36,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 const unsigned int SCR_WIDTH = 1600;
 const unsigned int SCR_HEIGHT = 1200;
 Player player;
+Feature fobjects;
 
 
 //time
@@ -45,7 +48,7 @@ unsigned int tex;
 
 int main()
 {
-    player = Player(glm::vec3(0, 20, 0));
+    player = Player(glm::vec3(0, 120, 0));
     // glfw: initialize and configure
     // ------------------------------
     glfwInit();
@@ -120,6 +123,9 @@ int main()
 
     std::vector<Chunk> chunks;
     ChunkLoader chunkLoader = ChunkLoader();
+
+    ThreadPool chunk_threads = ThreadPool(5);
+    fobjects = Feature();
   
     // render loop
     // -----------
@@ -147,6 +153,9 @@ int main()
         glEnable(GL_DEPTH_TEST);
         glEnable(GL_MULTISAMPLE);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    
+
+
 
 
         glm::mat4 view = player.getCameraView();
@@ -155,7 +164,7 @@ int main()
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
         glm::mat4 model = glm::mat4(1.0f);
         //make sure all chunks should be loaded, if not, unload, genereate new chunks when needed and finally draw all active chunks.
-        chunkLoader.manageChunks(model, projection, view, player.getPlayerPosition(), parentWindow);
+        chunkLoader.manageChunks(model, projection, view, player.getPlayerPosition(), &chunk_threads, &fobjects);
   
         // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
         // -------------------------------------------------------------------------------

@@ -11,76 +11,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <mutex>
-
-
-struct SharedVec
-{
-public:
-	void push_back(Chunk value)
-	{
-		// never use naked lock/unlock on mutex it is not exception safe
-		std::scoped_lock<std::mutex> lock{ m };
-		v.push_back(value);
-	}
-
-	void clear()
-	{
-
-		std::scoped_lock<std::mutex> lock{ m };
-		v.clear();
-	}
-
-	std::vector<Chunk> get_copy()
-	{
-
-		std::scoped_lock<std::mutex> lock{ m };
-		return std::vector<Chunk>{v};
-	}
-
-	void erase(int index)
-	{
-
-		std::scoped_lock<std::mutex> lock{ m };
-		v.at(index).deleteChunkData();
-		v.at(index).deleteBuffers();
-		v.erase(v.begin() + index);
-	
-	}
-
-	Chunk at(int i) {
-		std::scoped_lock<std::mutex> lock{ m };
-		return v.at(i);
-	}
-
-	std::vector<Chunk>::iterator begin() {
-		
-		std::scoped_lock<std::mutex> lock{ m };
-		return v.begin();
-	}
-
-	glm::vec2 getChunkPos(int i) {
-
-		std::scoped_lock<std::mutex> lock{ m };
-		return v.at(i).getChunkPos();
-	}
-
-	int size() {
-
-		std::scoped_lock<std::mutex> lock{ m };
-		return v.size();
-	}
-	void drawChunk(int i, glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos) {
-		std::scoped_lock<std::mutex> lock{ m };
-		v.at(i).drawChunk(model, projection, view, cameraPos);
-	}
-
-
-private:
-	// keep the lock with the object that you want to be threadsafe
-	std::mutex m;
-	std::vector<Chunk> v;
-
-};
+#include "ThreadPool.h"
+#include "Feature.h"
 
 
 class ChunkLoader {
@@ -89,19 +21,20 @@ class ChunkLoader {
 private:
 	
 
-	SharedVec chunks;
-	glm::vec3 pPos;
+
+
 	glm::vec2 playerCurrentChunk;
-	std::vector<Chunk> chunkClone;
-	glm::vec2 calculateCurrentChunkCoords();
+	std::vector<std::shared_ptr<Chunk>> chunks;
+	glm::vec3 calculateCurrentChunkCoords();
 	void checkChunkRange();
 	
 
 public:
+	glm::vec3 pPos;
 	ChunkLoader();
-	void manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, GLFWwindow* mainWindow);
+	void manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, ThreadPool *t, Feature *f);
 	void deleteChunkBuffers();
-	void threadBufferCreation(glm::vec2 cZone, GLFWwindow* mainWindow);
+	void threadBufferCreation(glm::vec3 cZone, GLFWwindow* mainWindow);
 	void joinAllThreads();
 };
 

@@ -7,7 +7,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <mutex>
 #include <functional>
-
+#include "ThreadPool.h"
+#include "LayeredNoise.h"
+#include <queue>
 
 #define GLM_SWIZZLE
 
@@ -17,13 +19,19 @@ glm::vec3 pPos;
 glm::vec2 playerCurrentChunk;
 std::mutex vectorMutex;
 
-std::vector<Chunk> clonedChunks;
+glm::vec3 oldCoords = {0, 0, -10000};
 
-int frameCounter = 0;
+
+
+std::vector<std::shared_ptr<Chunk>> chunks;
+
+int frameCounter = 1000;
 int frameCounter2 = 0;
 
+int chunk_size = 32;
 
-struct SharedVec chunks;
+
+
 
 ChunkLoader::ChunkLoader() {
 	
@@ -37,21 +45,6 @@ TODO: remove mainWindow parameter (deprecated)
 */
 
 
-
-void ChunkLoader::threadBufferCreation(glm::vec2 cZone, GLFWwindow* mainWindow) 
-{
-
-	int cIndex = 0;
-	Chunk nc = Chunk();
-	cIndex = chunks.size();
-	nc.setChunkPos(cZone.x, cZone.y);
-	nc.firstChunkGen();
-	nc.genChunkMesh();
-	chunks.push_back(Chunk(nc));
-	
-	
-	
-}
 
 
 /*
@@ -69,107 +62,121 @@ TODO:  GLFWwindow* mainWindow - deprecated, delete soon
 
 */
 
-void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, GLFWwindow* mainWindow) 
+void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos, ThreadPool *t, Feature *f) 
 {
 	
-	glm::vec2 cCoords = calculateCurrentChunkCoords();
+	
+	glm::vec3 cCoords = calculateCurrentChunkCoords();
+
 	pPos = cameraPos;
 
 	frameCounter++;
 	frameCounter2++;
 
-	
-	if (frameCounter == 70) {
-		for (size_t i = 0; i < threads.size(); i++)
-		{
-			if (threads.size() > 0 && threads.at(0).joinable()) {
-				threads.at(i).join();
-				threads.erase(threads.begin());
-			}
+		
 
-		
-		}
-		
 
 		frameCounter = 0;
+		
 		for (int i = 0; i < chunks.size(); i++)
 		{
 
-			glm::vec2 cPos = chunks.getChunkPos(i);
 
-			int distance = sqrt((pPos.x - cPos.x + 8) * (pPos.x - cPos.x + 8) + (pPos.z - cPos.y + 8) * (pPos.z - cPos.y + 8));
+			glm::vec3 cPos = chunks.at(i)->getChunkPos();
 
-			if (distance > 168)
+			int distance = sqrt((pPos.x - cPos.x + 32) * (pPos.x - cPos.x + 32) + (pPos.z - cPos.y + 32) * (pPos.z - cPos.y + 32));
+
+			if (distance > 1600)
 			{
-				chunks.erase(i);
+				chunks.erase(chunks.begin() + i);
 			}
 		}
+
 
 		bool cNew = false;
 
 
-	
-		if (chunks.size() < 400)
-		{
-			
-			int cloop = 0;
-			int cx = 20;
-			int cr = 1;
-			while (cloop < cx * cx) {
+		int cloop = 0;
+		int cx = 4;
+		int cz = 4;
+		int cy = 1;
 
-				for (int x = -cr; x < cr + 1; x++)
+		int cr1 = 0;
+		int cr2 = 0;
+	
+
+			for (int x = -cx; x < cz+ 1; x++)
+			{
+				for (int z = -cz; z <  + 1; z++)
 				{
-					for (int z = -cr; z < cr + 1; z++)
+					for (int y = 5; y >= 2; y--)
 					{
+
 						cloop++;
 						if (!cNew) {
-							glm::vec2 cZone = cCoords + glm::vec2(x * 16, z * 16);
+							glm::vec3 cZone = cCoords + glm::vec3((x * chunk_size), (y * chunk_size), (z * chunk_size));
 							int chunksChecked = 0;
 							bool built = false;
 
 							for (int i = 0; i < chunks.size(); i++)
 							{
-								if (cZone == chunks.getChunkPos(i)) {
+								if (cZone == chunks.at(i)->getChunkPos()) {
 									built = true;
 								}
 							}
 
 							if (!built) {
-								threads.push_back(std::thread(&ChunkLoader::threadBufferCreation, this, cZone, mainWindow));
-								
-								cNew = true;
-								
+
+								for (size_t x = 0; x < 32; x++)
+								{
+									for (size_t z = 0; z < 32; z++)
+									{	
+										for (size_t y = 0; y < 32; y++) {
+											srand(x * y + z);
+											if (cZone.y + y < 120 && std::rand() % 100 == 2 && cZone.y + y == LayeredNoise::getHeightNoise(cZone.x + x, cZone.z + z) + 101) {
+												f->createFeature(cZone.x + x, cZone.y + y, cZone.z + z, Feature::OAK_TREE);
+											}
+										}
+									}
+								}
+
+								chunks.push_back(std::make_shared<Chunk>());
+								chunks.at(chunks.size() - 1)->start(cZone.x, cZone.y, cZone.z, t, f);
+
+
 							}
 
 							chunksChecked++;
 						}
 					}
 				}
-
-				cr++;
 			}
-		}
+
+			cr1++;
+			if (cr2 <= cy) {
+				cr2++;
+			}
 
 		
-	}
-
-
 
 
 
 	
-	
 
+
+
+
+		
 	for (size_t i = 0; i < chunks.size(); i++)
 	{
-		chunks.drawChunk(i, model, projection, view, cameraPos);
+
+		chunks.at(i)->drawChunk(model, projection, view, cameraPos);
 
 	}
-		
 
 
 
-				
+	
 }
 
 
@@ -190,13 +197,14 @@ void ChunkLoader::checkChunkRange() { }
 /*
 finds and returns the actual chunk coord based off the players current position.
 */
-glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
+glm::vec3 ChunkLoader::calculateCurrentChunkCoords() {
 
 	int currentZ = (int)pPos.z;
 	int currentX = (int)pPos.x;
+	int currentY = (int)pPos.y;
 
 
-	while (currentZ % 16 != 0) {
+	while (currentZ % chunk_size != 0) {
 		if (currentZ > 0) {
 			currentZ -= 1;
 			
@@ -208,7 +216,7 @@ glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
 
 	}
 
-	while (currentX % 16 != 0) {
+	while (currentX % chunk_size != 0) {
 		if (currentX > 0) {
 			currentX -= 1;
 
@@ -220,7 +228,22 @@ glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
 
 	}
 
-	return glm::vec2(currentX, currentZ);
+	while (currentY % chunk_size != 0) {
+		if (currentY > 0) {
+			currentY -= 1;
+
+		}
+		else {
+			currentY += 1;
+
+		}
+
+	}
+
+
+
+
+	return glm::vec3(currentX - 16, 0, currentZ - 16);
 }
 
 
@@ -228,7 +251,7 @@ glm::vec2 ChunkLoader::calculateCurrentChunkCoords() {
 deletes all chunk buffers
 */
 void ChunkLoader::deleteChunkBuffers() {
-	for (int i = 0; i < chunks.get_copy().size(); i++) {
-		chunks.get_copy().at(i).deleteBuffers();
+	for (int i = 0; i < chunks.size(); i++) {
+		chunks.at(i)->deleteBuffers();
 	}
 }

@@ -4,40 +4,51 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <stb_image.h>
+#include <vector>
+#include <thread>
+#include <functional>
 
 #include "shader_s.h"
-
 #include "Chunk.h"
-#include "SimplexNoise.h"
+#include "LayeredNoise.h"
 #include "glm/glm.hpp"
-#include <vector>
 #include "TextureManager.h"
+
 
 
 using std::vector;
 
+    const int WIDTH = 32;
+    const int DEPTH = WIDTH;
+    const int HEIGHT = 32;
+   
+
+    const int NEXT_LEFT = HEIGHT;
+    const int NEXT_RIGHT = -HEIGHT;
+    const int NEXT_FRONT = HEIGHT * WIDTH;
+    const int NEXT_BACK = -(HEIGHT * WIDTH);
+
     int posX;
     int posZ;
+    int posY;
     bool baked;
     bool chunkBuild = false;
     bool firstBake = false;
-    size_t bSize = 65536;
-    char* blocks;
+    size_t bSize = 32768;
+    char blocks[];
    
     char* hashedBlocks;
     int vCount;
     int cCounter;
     int v_size;
-    float* vertices;
+    float vertices[];
     bool bGen;
+
+   
 
     unsigned int VBO, VAO;
 
     vector<float> chunk_verts = {};
-    
-
-    Shader s1;
-    unsigned int texture;
 
     typedef struct {
 
@@ -50,89 +61,115 @@ using std::vector;
 
     } b_look;
 
-    vector<b_look> block_table;
+    std::vector<b_look> block_table = {};
+    
+
+    Shader s1;
+    unsigned int texture;
+
+ 
 
     /*
         Constructor for a 16x16x16 Chunk
 
     */
     Chunk::Chunk() {
-        blocks = (char*)malloc(bSize * sizeof(char));
-        baked = false;
-        bGen = false;
+     
+        this->vCount = 0;
+        this->baked = false;
+        this->bGen = false;
     }
 
-    Chunk::Chunk(const Chunk& copy) {
+    void Chunk::start(int x, int y, int z, ThreadPool *t, Feature *f){
+        this->blocks = (char*)malloc(bSize * sizeof(char));
+        
+
+        setChunkPos(x, y, z);
+        populateBlockTable();
+        auto self = shared_from_this();
+
+        
+        t->QueueJob([this, f] { firstChunkGen(f); });
+      
        
-        *this = copy;
     }
+
+
 
     void Chunk::deleteChunkData() {
+
         free(blocks);
-    }
+     }
 
     void Chunk::populateBlockTable() {
 
-     
         // id = 0
-
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::DIRT;
+        this->block_table.push_back(b_look());
+        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::DIRT;
 
         // id = 1
 
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::GRASS_TOP;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::DIRT;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::GRASS_SIDE;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::GRASS_SIDE;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::GRASS_SIDE;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::GRASS_SIDE;
+        this->block_table.push_back(b_look());
+        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::GRASS_TOP;
+        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::DIRT;
+        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::GRASS_SIDE;
+        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::GRASS_SIDE;
+        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::GRASS_SIDE;
+        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::GRASS_SIDE;
 
         // id = 2
 
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::STONE;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::STONE;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::STONE;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::STONE;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::STONE;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::STONE;
+       this->block_table.push_back(b_look());
+       this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::STONE;
+       this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::STONE;
+       this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::STONE;
+       this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::STONE;
+       this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::STONE;
+       this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::STONE;
 
         // id = 3
 
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::LOG_TOP;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::LOG;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::LOG;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::LOG;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::LOG;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::LOG;
-
+       this->block_table.push_back(b_look());
+       this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::LOG_TOP;
+       this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::LOG;
+       this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::LOG;
+       this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::LOG;
+       this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::LOG;
+       this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::LOG;
+                          
         // id = 4
 
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::LEAF;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::LEAF;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::LEAF;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::LEAF;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::LEAF;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::LEAF;
+        this->block_table.push_back(b_look());
+        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::LEAF;
+        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::LEAF;
+        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::LEAF;
+        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::LEAF;
+        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::LEAF;
+        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::LEAF;
 
         // id = 5
 
-        block_table.push_back(b_look());
-        block_table.at(block_table.size() - 1).c_top = TextureManager::BEDROCK;
-        block_table.at(block_table.size() - 1).c_bottom = TextureManager::BEDROCK;
-        block_table.at(block_table.size() - 1).c_left = TextureManager::BEDROCK;
-        block_table.at(block_table.size() - 1).c_right = TextureManager::BEDROCK;
-        block_table.at(block_table.size() - 1).c_front = TextureManager::BEDROCK;
-        block_table.at(block_table.size() - 1).c_back = TextureManager::BEDROCK;
+        this->block_table.push_back(b_look());
+        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::BEDROCK;
+        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::BEDROCK;
+        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::BEDROCK;
+        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::BEDROCK;
+        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::BEDROCK;
+        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::BEDROCK;
+
+
+        this->block_table.push_back(b_look());
+        this->block_table.at(this->block_table.size() - 1).c_top =      TextureManager::SNOW;
+        this->block_table.at(this->block_table.size() - 1).c_bottom =   TextureManager::SNOW;
+        this->block_table.at(this->block_table.size() - 1).c_left =     TextureManager::SNOW;
+        this->block_table.at(this->block_table.size() - 1).c_right =    TextureManager::SNOW;
+        this->block_table.at(this->block_table.size() - 1).c_front =    TextureManager::SNOW;
+        this->block_table.at(this->block_table.size() - 1).c_back =     TextureManager::SNOW;
 
 
     }
@@ -169,273 +206,107 @@ using std::vector;
         return true;
     }
 
-    float Chunk::getCaveNoise(int x, int y, int z) {
+   
 
-        return SimplexNoise::noise(x * .03, y * .03, z * .03);
-
-    }
-
-    int Chunk::getLayeredNoise(int x, int z) {
-        int yLevel = 0;
-
+    void Chunk::firstChunkGen(Feature *f) {
+       
         
-        int n1 = (int)((SimplexNoise::noise(x / 20, z / 20) + 1));
-        int n2 = (int)((SimplexNoise::noise((x + 8) / 20, (z + 8) / 20) + 1));
-        int n3 = (int)((SimplexNoise::noise((x + 16) / 20, (z + 16 ) / 20) + 1));
-
-        int n4 = (int)((SimplexNoise::noise((x + 32) / 20, (z + 32) / 20) + 1));
-        int n5 = (int)((SimplexNoise::noise((x + 48) / 20, (z + 48) / 20) + 1));
-        int n6 = (int)((SimplexNoise::noise((x + 64) / 20, (z + 64) / 20) + 1));
-
-
-        int n7 = (int)((SimplexNoise::noise(x / 10, z / 10) + 1));
-        int n8 = (int)((SimplexNoise::noise((x + 8) / 10, (z + 8) / 10) + 1));
-        int n9 = (int)((SimplexNoise::noise((x + 16) / 10, (z + 16) / 10) + 1));
-
-        int n10 = (int)((SimplexNoise::noise((x + 32) / 10, (z + 32) / 10) + 1));
-        int n11 = (int)((SimplexNoise::noise((x + 48) / 10, (z + 48) / 10) + 1));
-        int n12 = (int)((SimplexNoise::noise((x + 64) / 10, (z + 64) / 10) + 1));
-       
-
-        int noise = (((n1 + n2 + n3 + n4 + n5 + n5 + n6 + n7)) + ((n8 + n10 + n11 + n12)) + 2);
-       
-       
-
-        return noise;
-    }
-
-
-    bool Chunk::firstChunkGen() {
       
-        populateBlockTable();
         int position = 0;
 
-        for (int x = 0; x < 16; x++)
+        for (int x = 0; x < WIDTH; x++)
         {
-            for (int z = 0; z < 16; z++)
+            for (int z = 0; z < HEIGHT; z++)
             {
 
+                int noise = LayeredNoise::getHeightNoise(x + this->posX, z + this->posZ);
+                for (int y = 0; y < 32; y++) {
 
-                    int yLevel = 0;
-                    int noise = getLayeredNoise(x + posX, z + posZ);
-              
-                    blocks[position] = 'B';
-                    yLevel++;
-                    position++;
 
-                    for (size_t i = 0; i < 60; i++) {
-
-                        if (getCaveNoise(x + posX, yLevel, z + posZ) > 0) {
-                            blocks[position] = 'S';
+                    if (f->getFeatureBlock(x + this->posX, y + this->posY, z + this->posZ) != '!') {
+                        this->blocks[position] = f->getFeatureBlock(x + this->posX, y + this->posY, z + this->posZ);
+                        position++;
+                    }
+                    else if (y + this->posY < 2) {
+                        this->blocks[position] = 'B';
+                        position++;
+                    }
+                    else if (y + this->posY < 100) {
+                        if (LayeredNoise::getCaveNoise(x + this->posX, y + this->posY, z + this->posZ) > 0) {
+                            this->blocks[position] = 'S';
+                            position++;
 
                         }
                         else {
-                            blocks[position] = 'A';
-                        }
-
-                      
-                        yLevel++;
-                        position++;
-                    }
-
-
-
-                    for (int y = 1; y < noise -1; y++)
-                    {
-                        if (getCaveNoise(x + posX, yLevel, z + posZ) > 0.0f) {
-                        
-                                blocks[position] = 'D';
-                            
-                          
-                           
-                        }
-                        else {
-                            blocks[position] = 'A';
-                        }
-
-                        yLevel++;
-                        position++;
-                    }
-
-                   
-        
-                    int rand = std::rand() % 100;
-
-                    /*
-                    *   Tree Spawner 
-                    * 
-                    *
-                        checks rand because spawn rate is 1/1000                                                            (spawn rate)
-                        checks to see that position is > 2048 because we must edit block that is in front of current x 2
-                        checks to see that position is < 63488 for the same reason                                          (min and max)
-                        sets bound x > 3 && x < 61 && z > 3 && z < 61 so that tree does not spawn on chunk border           (spawn bound box)
-
-
-                    */
-                    if (blocks[position - 1] != 'A' && yLevel < 240 && rand < 2 && position > 8192 && position < 63488 && x > 3 && x < 14 && z > 3 && z < 14) {
-                       
-                        
-                        if (yLevel < 16) {
-                           
-                           blocks[position] = 'D';
-                                
-                        
-                            yLevel++;
+                            this->blocks[position] = 'A';
                             position++;
                         }
-                        for (size_t i = 0; i < 4; i++)
-                        {
 
-                            //overwritte, delete
-                            if (i > 1) {
-                                blocks[position - 256] = 'F';
-                                blocks[position - 512] = 'F';
-
-                                blocks[position + 256] = 'F';
-                                blocks[position + 512] = 'F';
-
-                                blocks[position + 4096] = 'F';
-                                blocks[position + 8192] = 'F';
-
-                                blocks[position - 4096] = 'F';
-                                blocks[position - 8192] = 'F';
+                    }
+                    else if (y + this->posY > 145 && y + this->posY < 100 + noise) {
 
 
-                            }
-                            blocks[position] = 'L';
-                            yLevel++;
-                            position++;
-                           
-                        }
-                        blocks[position] = 'F';
-                        yLevel++;
+                        this->blocks[position] = 'O';
                         position++;
-                       
 
-                        
+
+                    }
+                    else if (y + this->posY > 120 && y + this->posY < 100 + noise) {
+
+
+                        this->blocks[position] = 'S';
+                        position++;
+
+
+
+                    }
+                    else if (y + this->posY >= 100 && y + this->posY < 100 + noise) {
+
+                        this->blocks[position] = 'D';
+                        position++;
+
+
+                    }
+                    else if (this->blocks[position - 1] == 'D') {
+
+                        this->blocks[position] = 'G';
+                        position++;
+
+                    }
+                    else if (this->blocks[position - 1] == 'S' && y + this->posY > 140) {
+                        this->blocks[position] = 'O';
+                        position++;
+
                     }
                     else {
-
-                        if (getCaveNoise(x + posX, yLevel, z + posZ) > -.4f) {
-                            blocks[position] = 'G';
-
-                        }
-                        else {
-                            blocks[position] = 'A';
-                        }
-                        yLevel++;
+                        this->blocks[position] = 'A';
                         position++;
-
                     }
-                 
 
-                   
+                }
 
-                    if (yLevel < 256) {
-                        
-                        for (int i = yLevel; i < 256; i++) {
-                          
-                               
-                                blocks[position] = 'A';
-                                yLevel++;
-                                position++;
-                               
-                            
-                        }
-                        
-                    }
+
+
+
+
             }
+           
         }
-
-
-
-        
-        position = 0;
-        for (int x = 0; x < 16; x++)
-        {
-            for (int z = 0; z < 16; z++)
-            {
-                int noise = getLayeredNoise(x + posX, z + posZ);
-
-                for (int y = 0; y < 256; y++) {
-
-                    if (blocks[position] == 'L') {
-                        if (y > noise + 1 + 60) {
-                            blocks[position - 256] = 'F';
-                            blocks[position - 512] = 'F';
-
-                            blocks[position + 256] = 'F';
-                            blocks[position + 512] = 'F';
-
-                            blocks[position + 4096] = 'F';
-                            blocks[position + 8192] = 'F';
-
-                            blocks[position - 4096] = 'F';
-                            blocks[position - 8192] = 'F';
-
-
-                            blocks[position + 4096 + 256] = 'F';
-                            blocks[position + 8192 + 256] = 'F';
-                            blocks[position + 4096 + 512] = 'F';
-                            blocks[position + 8192 + 512] = 'F';
-
-                            blocks[position + 4096 - 256] = 'F';
-                            blocks[position + 8192 - 256] = 'F';
-                            blocks[position + 4096 - 512] = 'F';
-                            blocks[position + 8192 - 512] = 'F';
-
-                            blocks[position - 4096 - 512] = 'F';
-                            blocks[position - 8192 - 512] = 'F';
-                            blocks[position - 4096 - 256] = 'F';
-                            blocks[position - 8192 - 256] = 'F';
-
-                            blocks[position - 4096 + 512] = 'F';
-                            blocks[position - 8192 + 512] = 'F';
-                            blocks[position - 4096 + 256] = 'F';
-                            blocks[position - 8192 + 256] = 'F';
-
-
-                         
-
-                          
-                        }
-                    }
-                  
-                    if (blocks[position - 1] == 'L' && y == noise + 4 + 60) {
-                        blocks[position] = 'F';
-                        blocks[position + 1] = 'F';
-                    }
-
-                    if (blocks[position - 1] == 'L' && blocks[position] == 'F') {
-                        blocks[position + 4096] = 'F';
-                        blocks[position - 4096] = 'F';
-                        blocks[position - 256] = 'F';
-                        blocks[position + 256] = 'F';
-                        blocks[position + 4096 + 256] = 'F';
-                        blocks[position + 4096 - 256] = 'F';
-                        blocks[position - 4096 - 256] = 'F';
-                        blocks[position - 4096 + 256] = 'F';
-                    }
-
-                
-                  
-                    position++;
-
-               }
-            }
-        }
+      
+        genChunkMesh();
        
-        
 
-        return true;
+        
     }
 
     /*
         Helper function which combindes face vertex array and face texture coordinate vector and pushes the vertices to chunk_verts
     */
 
-    void Chunk::pushToVertices(float eArray[], std::vector<float> tc) {
+    void Chunk::pushToVertices(std::vector<float> eArray, std::vector<float> tc, std::vector<float> *c) {
 
+      
+      
         int texc = 0;
         int tIndex = 0;
         int index = 0;
@@ -443,12 +314,12 @@ using std::vector;
         {
 
             if (texc == 3 || texc == 4) {
-                chunk_verts.push_back(tc.at(tIndex));
+                this->chunk_verts.push_back(tc.at(tIndex));
                 tIndex++;  
             }
             else {
 
-                chunk_verts.push_back(eArray[index]);
+                this->chunk_verts.push_back(eArray.at(index));
                 index++;
             }
                 
@@ -468,128 +339,129 @@ using std::vector;
         Main logic for creating the mesh data
     
     */
-    bool Chunk::genChunkMesh() {
+    void Chunk::genChunkMesh() {
+    
         TextureManager tf = TextureManager(5);
         cCounter = 0;
-        for (int x = 0; x < 16; x++) {
-            for (int z = 0; z < 16; z++) { 
-                for (int y = 0; y < 256; y++) {
-                            int noise = getLayeredNoise(x + posX, z + posZ);
+        for (int x = 0; x < WIDTH; x++) {
+            for (int z = 0; z < DEPTH; z++) { 
+                for (int y = 0; y < HEIGHT; y++) {
+                            int noise = LayeredNoise::getHeightNoise(x + this->posX, z + this->posZ);
                    
                            b_look fb;
-                           if (blocks[cCounter] == 'D')
-                               fb = block_table.at(0);
-                           if (blocks[cCounter] == 'G')
-                               fb = block_table.at(1);
-                           if (blocks[cCounter] == 'S')
-                               fb = block_table.at(2);
-                           if (blocks[cCounter] == 'L')
-                               fb = block_table.at(3);
-                           if (blocks[cCounter] == 'F')
-                               fb = block_table.at(4);
-                           if (blocks[cCounter] == 'B')
-                               fb = block_table.at(5);
-   
+                           if (this->blocks[cCounter] == 'D')
+                               fb = this->block_table.at(0);
+                           if (this->blocks[cCounter] == 'G')
+                               fb = this->block_table.at(1);
+                           if (this->blocks[cCounter] == 'S')
+                               fb = this->block_table.at(2);
+                           if (this->blocks[cCounter] == 'L')
+                               fb = this->block_table.at(3);
+                           if (this->blocks[cCounter] == 'F')
+                               fb = this->block_table.at(4);
+                           if (this->blocks[cCounter] == 'B')
+                               fb = this->block_table.at(5);
+                           if (this->blocks[cCounter] == 'O')
+                               fb = this->block_table.at(6);
                           
-                               int noiseLeft = getLayeredNoise(x + posX, z + posZ - 1) + 60;
-                               int caveNoiseLeft = getCaveNoise(x + posX, y, z + posZ - 1);
-                               if ((z == 0 && caveNoiseLeft <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && (cCounter > 255 && blocks[cCounter - 256] == 'A'))) {
+                            
+                               if ((z == 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && (cCounter >= NEXT_LEFT && blocks[cCounter - NEXT_LEFT] == 'A'))) {
                                    //left face
                                    // v1, v2, v3, t1, t2, n1, n2 ,n3
-                                   float left_face[] = { -0.5f + x + posX,    -0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
-                                                            0.5f + x + posX,    -0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
-                                                            0.5f + x + posX,     0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                   std::vector<float> left_face = { -0.5f + x + posX,    -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                                            0.5f + x + posX,    -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                                            0.5f + x + posX,     0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
 
-                                                            0.5f + x + posX,     0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
-                                                           -0.5f + x + posX,    0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
-                                                           -0.5f + x + posX,   -0.5f + y,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f
+                                                            0.5f + x + posX,     0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                                           -0.5f + x + posX,    0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                                           -0.5f + x + posX,   -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f
 
                                    };
-                                   pushToVertices(left_face, tf.getFaceCoords(fb.c_left, TextureManager::LEFT));
-                                   vCount += 6;
+
+                                   this->pushToVertices(left_face, tf.getFaceCoords(fb.c_left, TextureManager::LEFT), &chunk_verts);
+                                   this->vCount += 6;
                                }
 
-                               int noiseRight = getLayeredNoise(x + posX, z + posZ + 1) + 60;
-                               int caveNoiseRight = getCaveNoise(x + posX, y, z + posZ + 1);
+                             
 
-                               if ((z == 15 && caveNoiseRight <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < bSize - 256 && blocks[cCounter + 256] == 'A')) {
+                               if ((z == 31 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < bSize - HEIGHT && blocks[cCounter + HEIGHT] == 'A')) {
                                    //right face
                                    //z=0
-                                   float right_face[] = { -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
-                                                             0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
-                                                             0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                   std::vector<float> right_face =  { -0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                                                     0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                                                     0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
 
-                                                             0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
-                                                            -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
-                                                            -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f
+                                                                     0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                                                    -0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                                                    -0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f
 
                                    };
 
-                                   pushToVertices(right_face, tf.getFaceCoords(fb.c_right, TextureManager::RIGHT));
-                                   vCount += 6;
+                                   pushToVertices(right_face, tf.getFaceCoords(fb.c_right, TextureManager::RIGHT), &chunk_verts);
+                                   this->vCount += 6;
                                }
 
                                //front
                                // x = 63
-                               int noiseFront = getLayeredNoise(x + posX + 1, z + posZ) + 60;
-                               int caveNoiseFront = getCaveNoise(x + posX + 1, y, z + posZ);
-                               if ((x == 15  && caveNoiseFront <= 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < (bSize - 4096) && blocks[cCounter + 4096] == 'A')) {
-                                   float front_face[] = { 0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
-                                                             0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
-                                                             0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
-
-                                                             0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
-                                                             0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
-                                                             0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f
+                              
+                               if ((x == 31 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < (bSize - NEXT_FRONT) && blocks[cCounter + NEXT_FRONT] == 'A')) {
+                           
+                                   
+                                       std::vector<float> front_face = { 0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                                             0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                                             0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                                                                         
+                                                             0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                                             0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                                             0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f
 
                                    };
-                                   pushToVertices(front_face, tf.getFaceCoords(fb.c_front, TextureManager::FRONT));
-                                   vCount += 6;
+                                   pushToVertices(front_face, tf.getFaceCoords(fb.c_front, TextureManager::FRONT), &chunk_verts);
+                                   this->vCount += 6;
                                }
                                //back
                                // x = 0
-                               int noiseBack = getLayeredNoise(x + posX - 1, z + posZ) + 60;
-                               int caveNoiseBack = getCaveNoise(x + posX - 1, y, z + posZ);
-                               if ((x == 0 && caveNoiseBack <= 0 && blocks[cCounter] != 'A')  || (blocks[cCounter] != 'A' && cCounter > 4095 && blocks[cCounter - 4096] == 'A')) {
-                                   float back_face[] = { -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
-                                                           -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
-                                                           -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
-
-                                                           -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
-                                                           -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
-                                                           -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f
-
+                             
+                               if ((x == 0 && blocks[cCounter] != 'A')  || (blocks[cCounter] != 'A' && cCounter > NEXT_FRONT && blocks[cCounter - NEXT_FRONT] == 'A')) {
+                                   std::vector<float> back_face = { -0.5f + x + posX,      0.5f + y + posY,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                                           -0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                                           -0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                                                                        
+                                                           -0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                                           -0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                                           -0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f
+                                                                                        
                                    };
-                                   pushToVertices(back_face, tf.getFaceCoords(fb.c_back, TextureManager::BACK));
-                                   vCount += 6;
+                                   pushToVertices(back_face, tf.getFaceCoords(fb.c_back, TextureManager::BACK), &chunk_verts);
+                                   this->vCount += 6;
                                }
-                               if (blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 1] == 'A') {
+                               if ((y == 31 && blocks[cCounter] != 'A') || blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 1] == 'A') {
                                    //top
-                                   float top_face[] = { -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
-                                                         0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
-                                                         0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
-
-                                                         0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
-                                                        -0.5f + x + posX,    0.5f + y,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
-                                                        -0.5f + x + posX,    0.5f + y,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f
+                                   std::vector<float> top_face = { -0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                                         0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                                         0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                                                                      
+                                                         0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                                        -0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                                        -0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f
 
                                    };
-                                   pushToVertices(top_face, tf.getFaceCoords(fb.c_top, TextureManager::TOP));
-                                   vCount += 6;
+                                   pushToVertices(top_face, tf.getFaceCoords(fb.c_top, TextureManager::TOP), &chunk_verts);
+                                   this->vCount += 6;
                                }
                                //bottom
-                               if (blocks[cCounter] != 'A' && cCounter > 0 && blocks[cCounter - 1] == 'A') {
-                                   float bottom_face[] = { -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
-                                                             0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
-                                                             0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
-
-                                                             0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
-                                                            -0.5f + x + posX,   -0.5f + y,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
-                                                            -0.5f + x + posX,   -0.5f + y,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f
+                               if ((y == 0 && blocks[cCounter] != 'A') || blocks[cCounter] != 'A' && cCounter > 0 && blocks[cCounter - 1] == 'A') {
+                                   std::vector<float> bottom_face = { -0.5f + x + posX,    -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                                             0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                                             0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                                                                         
+                                                             0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                                            -0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                                            -0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f
 
                                    };
-                                   pushToVertices(bottom_face, tf.getFaceCoords(fb.c_bottom, TextureManager::BOTTOM));
-                                   vCount += 6;
+                                   pushToVertices(bottom_face, tf.getFaceCoords(fb.c_bottom, TextureManager::BOTTOM), &chunk_verts);
+                                   this->vCount += 6;
                                }
                            
 
@@ -603,33 +475,34 @@ using std::vector;
         
         }
 
-       baked = true;
-       return true;
+       this->baked = true;
+      
     }
 
     void Chunk::generateBufferData() {
+        if (this->chunk_verts.size() > 0) {
 
-        vertices = &chunk_verts[0];
+            this->vertices = &(this->chunk_verts[0]);
 
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
+            glGenVertexArrays(1, &VAO);
+            glGenBuffers(1, &VBO);
 
-        glBindVertexArray(VAO);
+            glBindVertexArray(VAO);
 
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, vCount * 32, vertices, GL_STATIC_DRAW);
+            glBindBuffer(GL_ARRAY_BUFFER, VBO);
+            glBufferData(GL_ARRAY_BUFFER, this->vCount * 32, this->vertices, GL_STATIC_DRAW);
 
 
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-        glEnableVertexAttribArray(0);
+            glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+            glEnableVertexAttribArray(0);
 
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-        glEnableVertexAttribArray(1);
+            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+            glEnableVertexAttribArray(1);
 
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
-        glEnableVertexAttribArray(2);
+            glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
+            glEnableVertexAttribArray(2);
 
-        
+        }
        
     }
 
@@ -659,31 +532,33 @@ using std::vector;
 
     bool Chunk::drawChunk(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos) {
 
-    
-        if (baked) {
+        if (this->chunk_verts.size() > 0) {
+            if (this->baked) {
 
-            if (!bGen) {
-               // loadTexture();
-                s1 = Shader("chunk_texture.vs", "chunk_texture.fs");
-              
-                generateBufferData();
-                bGen = true;
+                if (!this->bGen) {
+                    // loadTexture();
+                    this->s1 = Shader("chunk_texture.vs", "chunk_texture.fs");
+
+                    generateBufferData();
+
+                    this->bGen = true;
+                }
+
+
+                this->s1.use();
+                this->s1.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+                this->s1.setVec3("lightPos", glm::vec3(40.0f, 200.0f, 40.0f));
+                this->s1.setVec3("viewPos", cameraPos);
+
+                this->s1.setMat4("model", model);
+
+                this->s1.setMat4("projection", projection);
+                this->s1.setMat4("view", view);
+
+                glBindVertexArray(this->VAO);
+                glDrawArrays(GL_TRIANGLES, 0, this->vCount);
+
             }
-
-          
-            s1.use();
-            s1.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
-            s1.setVec3("lightPos", cameraPos + glm::vec3(40.0f, 40.0f, 40.0f));
-            s1.setVec3("viewPos", cameraPos);
-
-            s1.setMat4("model", model);
-
-            s1.setMat4("projection", projection);
-            s1.setMat4("view", view);
-
-            glBindVertexArray(VAO);
-            glDrawArrays(GL_TRIANGLES, 0, vCount);
-
         }
        
 
@@ -698,14 +573,15 @@ using std::vector;
         return true;
     }
 
-    glm::vec2 Chunk::getChunkPos() {
+    glm::vec3 Chunk::getChunkPos() {
 
-        return glm::vec2(posX, posZ);
+        return glm::vec3(this->posX, this->posY, this->posZ);
     }
 
-    void Chunk::setChunkPos(int xp, int zp) {
+    void Chunk::setChunkPos(int xp, int yp, int zp) {
         this->posX = xp;
         this->posZ = zp;
+        this->posY = yp;
     }
     
 

@@ -11,6 +11,7 @@ Camera camera;
 Player::Player(glm::vec3 position) {
 	this->position = position;
 	this->camera = Camera(position);
+	this->camera.updateCameraPosition(this->position);
 }
 
 glm::vec3 Player::getPlayerPosition() {
