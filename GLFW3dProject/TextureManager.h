@@ -15,7 +15,7 @@ public:
 	enum faces { TOP, BOTTOM, LEFT, RIGHT, FRONT, BACK };
 
 	TextureManager(int size);
-	std::vector<float> getFaceCoords(blocks b, faces f);
+	float* getFaceCoords(blocks b, faces f);
 
 };
 

@@ -10,13 +10,13 @@ void Feature::createFeature(int x, int y, int z, feature_type ft) {
 	switch (ft)
 	{
 	case Feature::OAK_TREE:
-		createTreeFeature(x, y, z);
+		createOakTreeFeature(x, y, z);
 		break;
 	
 	}
 
 }
-void Feature::createTreeFeature(int x, int y, int z) {
+void Feature::createOakTreeFeature(int x, int y, int z) {
 	
 
 	int xc = -2;

@@ -23,7 +23,7 @@ private:
 
 	};
 
-	std::vector<b_look> block_table;
+	b_look* block_table;
 
 	bool chunkBuild;
 	bool firstBake;
@@ -39,13 +39,14 @@ private:
 	
 	unsigned int texture;
 
-	void pushToVertices(std::vector<float> eArray, std::vector<float> f, std::vector<float>* c);
+	void pushToVertices(float* eArray, float* f, std::vector<float>* c);
 	void populateBlockTable();
 	bool loadTexture();
 
 public:
 	std::vector<float> chunk_verts;
 	char* blocks;
+	float* bufferdata;
 	bool baked;
 	bool bGen;
 	Shader s1;
@@ -53,7 +54,10 @@ public:
 	int posZ;
 	int posY;
 	int v_size;
+
 	float* vertices;
+	int faces;
+	int bdPointer;
 	
 
 	Chunk();

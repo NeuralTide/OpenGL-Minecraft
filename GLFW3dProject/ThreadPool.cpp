@@ -2,7 +2,7 @@
 #include <iostream>
 
 ThreadPool::ThreadPool(size_t numThreads)
-    : jobs(6000), // Initialize lock-free queue with a capacity
+    : jobs(4), // Initialize lock-free queue with a capacity
     done(false) {
     for (size_t i = 0; i < numThreads; ++i) {
         workers.emplace_back(&ThreadPool::Worker, this);

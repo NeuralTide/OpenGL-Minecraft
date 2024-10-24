@@ -58,7 +58,7 @@ private:
 
 
 	
-	void createTreeFeature(int x, int y, int z);
+	void createOakTreeFeature(int x, int y, int z);
 
 public:
 	enum feature_type { OAK_TREE = 0 };

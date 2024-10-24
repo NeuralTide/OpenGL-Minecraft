@@ -124,7 +124,7 @@ int main()
     std::vector<Chunk> chunks;
     ChunkLoader chunkLoader = ChunkLoader();
 
-    ThreadPool chunk_threads = ThreadPool(5);
+    ThreadPool chunk_threads = ThreadPool(2);
     fobjects = Feature();
   
     // render loop

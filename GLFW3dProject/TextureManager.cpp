@@ -46,10 +46,9 @@ TextureManager::TextureManager(int size) {
 	faces f - the face enum of the relevant block face
 
 */
-std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
+float* TextureManager::getFaceCoords(blocks b, faces f) {
 
 	float r[12] = {};
-	std::vector<float> toReturn;
 
 	switch (f)
 	{
@@ -222,10 +221,8 @@ std::vector<float> TextureManager::getFaceCoords(blocks b, faces f) {
 		break;
 	}
 
-	for (int i = 0; i < 12; i++)
-	{
-		toReturn.push_back(r[i]);
-	}
 
-	return toReturn;
+	
+
+	return r;
 }

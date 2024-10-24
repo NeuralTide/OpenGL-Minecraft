@@ -78,36 +78,25 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 
 		frameCounter = 0;
 		
-		for (int i = 0; i < chunks.size(); i++)
-		{
-
-
-			glm::vec3 cPos = chunks.at(i)->getChunkPos();
-
-			int distance = sqrt((pPos.x - cPos.x + 32) * (pPos.x - cPos.x + 32) + (pPos.z - cPos.y + 32) * (pPos.z - cPos.y + 32));
-
-			if (distance > 1600)
-			{
-				chunks.erase(chunks.begin() + i);
-			}
-		}
+		
 
 
 		bool cNew = false;
 
 
 		int cloop = 0;
-		int cx = 4;
-		int cz = 4;
+		int cx = 10;
+		int cz = 10;
 		int cy = 1;
 
 		int cr1 = 0;
 		int cr2 = 0;
 	
+		while (cloop < cx * cz * 7) {
 
-			for (int x = -cx; x < cz+ 1; x++)
+			for (int x = -cr1; x < cr1 + 1; x++)
 			{
-				for (int z = -cz; z <  + 1; z++)
+				for (int z = -cr1; z < cr1 + 1; z++)
 				{
 					for (int y = 5; y >= 2; y--)
 					{
@@ -127,10 +116,11 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 
 							if (!built) {
 
+								
 								for (size_t x = 0; x < 32; x++)
 								{
 									for (size_t z = 0; z < 32; z++)
-									{	
+									{
 										for (size_t y = 0; y < 32; y++) {
 											srand(x * y + z);
 											if (cZone.y + y < 120 && std::rand() % 100 == 2 && cZone.y + y == LayeredNoise::getHeightNoise(cZone.x + x, cZone.z + z) + 101) {
@@ -139,6 +129,7 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 										}
 									}
 								}
+								
 
 								chunks.push_back(std::make_shared<Chunk>());
 								chunks.at(chunks.size() - 1)->start(cZone.x, cZone.y, cZone.z, t, f);
@@ -156,6 +147,8 @@ void ChunkLoader::manageChunks(glm::mat4 model, glm::mat4 projection, glm::mat4 
 			if (cr2 <= cy) {
 				cr2++;
 			}
+
+		}
 
 		
 

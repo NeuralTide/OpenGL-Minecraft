@@ -50,6 +50,7 @@ using std::vector;
 
     vector<float> chunk_verts = {};
 
+
     typedef struct {
 
         TextureManager::blocks c_top;
@@ -61,7 +62,7 @@ using std::vector;
 
     } b_look;
 
-    std::vector<b_look> block_table = {};
+
     
 
     Shader s1;
@@ -78,15 +79,19 @@ using std::vector;
         this->vCount = 0;
         this->baked = false;
         this->bGen = false;
+        this->faces = 0;
+        this->bdPointer = 0;
+        this->faces = 0;
     }
 
     void Chunk::start(int x, int y, int z, ThreadPool *t, Feature *f){
         this->blocks = (char*)malloc(bSize * sizeof(char));
-        
+        this->bufferdata = (float*)malloc(bSize * 6 * 8 * sizeof(float));
+        this->block_table = (b_look*)malloc(7 * sizeof(b_look));
 
         setChunkPos(x, y, z);
         populateBlockTable();
-        auto self = shared_from_this();
+       
 
         
         t->QueueJob([this, f] { firstChunkGen(f); });
@@ -104,72 +109,72 @@ using std::vector;
     void Chunk::populateBlockTable() {
 
         // id = 0
-        this->block_table.push_back(b_look());
-        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::DIRT;
+        this->block_table[0] = b_look();
+        this->block_table[0].c_top = TextureManager::DIRT;
+        this->block_table[0].c_bottom = TextureManager::DIRT;
+        this->block_table[0].c_left = TextureManager::DIRT;
+        this->block_table[0].c_right = TextureManager::DIRT;
+        this->block_table[0].c_front = TextureManager::DIRT;
+        this->block_table[0].c_back = TextureManager::DIRT;
 
         // id = 1
 
-        this->block_table.push_back(b_look());
-        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::GRASS_TOP;
-        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::DIRT;
-        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::GRASS_SIDE;
-        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::GRASS_SIDE;
-        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::GRASS_SIDE;
-        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::GRASS_SIDE;
-
+        this->block_table[1] = b_look();
+        this->block_table[1].c_top = TextureManager::GRASS_TOP;
+        this->block_table[1].c_bottom = TextureManager::DIRT;
+        this->block_table[1].c_left = TextureManager::GRASS_SIDE;
+        this->block_table[1].c_right = TextureManager::GRASS_SIDE;
+        this->block_table[1].c_front = TextureManager::GRASS_SIDE;
+        this->block_table[1].c_back = TextureManager::GRASS_SIDE;
+      
         // id = 2
 
-       this->block_table.push_back(b_look());
-       this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::STONE;
-       this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::STONE;
-       this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::STONE;
-       this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::STONE;
-       this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::STONE;
-       this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::STONE;
+       this->block_table[2] = b_look();
+       this->block_table[2].c_top = TextureManager::STONE;
+       this->block_table[2].c_bottom = TextureManager::STONE;
+       this->block_table[2].c_left = TextureManager::STONE;
+       this->block_table[2].c_right = TextureManager::STONE;
+       this->block_table[2].c_front = TextureManager::STONE;
+       this->block_table[2].c_back = TextureManager::STONE;
 
         // id = 3
 
-       this->block_table.push_back(b_look());
-       this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::LOG_TOP;
-       this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::LOG;
-       this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::LOG;
-       this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::LOG;
-       this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::LOG;
-       this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::LOG;
+       this->block_table[3] = b_look();
+       this->block_table[3].c_top = TextureManager::LOG_TOP;
+       this->block_table[3].c_bottom = TextureManager::LOG;
+       this->block_table[3].c_left = TextureManager::LOG;
+       this->block_table[3].c_right = TextureManager::LOG;
+       this->block_table[3].c_front = TextureManager::LOG;
+       this->block_table[3].c_back = TextureManager::LOG;
                           
         // id = 4
 
-        this->block_table.push_back(b_look());
-        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::LEAF;
-        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::LEAF;
-        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::LEAF;
-        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::LEAF;
-        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::LEAF;
-        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::LEAF;
+        this->block_table[4] = b_look();
+        this->block_table[4].c_top = TextureManager::LEAF;
+        this->block_table[4].c_bottom = TextureManager::LEAF;
+        this->block_table[4].c_left = TextureManager::LEAF;
+        this->block_table[4].c_right = TextureManager::LEAF;
+        this->block_table[4].c_front = TextureManager::LEAF;
+        this->block_table[4].c_back = TextureManager::LEAF;
 
         // id = 5
 
-        this->block_table.push_back(b_look());
-        this->block_table.at(this->block_table.size() - 1).c_top = TextureManager::BEDROCK;
-        this->block_table.at(this->block_table.size() - 1).c_bottom = TextureManager::BEDROCK;
-        this->block_table.at(this->block_table.size() - 1).c_left = TextureManager::BEDROCK;
-        this->block_table.at(this->block_table.size() - 1).c_right = TextureManager::BEDROCK;
-        this->block_table.at(this->block_table.size() - 1).c_front = TextureManager::BEDROCK;
-        this->block_table.at(this->block_table.size() - 1).c_back = TextureManager::BEDROCK;
+        this->block_table[5] = b_look();
+        this->block_table[5].c_top = TextureManager::BEDROCK;
+        this->block_table[5].c_bottom = TextureManager::BEDROCK;
+        this->block_table[5].c_left = TextureManager::BEDROCK;
+        this->block_table[5].c_right = TextureManager::BEDROCK;
+        this->block_table[5].c_front = TextureManager::BEDROCK;
+        this->block_table[5].c_back = TextureManager::BEDROCK;
 
 
-        this->block_table.push_back(b_look());
-        this->block_table.at(this->block_table.size() - 1).c_top =      TextureManager::SNOW;
-        this->block_table.at(this->block_table.size() - 1).c_bottom =   TextureManager::SNOW;
-        this->block_table.at(this->block_table.size() - 1).c_left =     TextureManager::SNOW;
-        this->block_table.at(this->block_table.size() - 1).c_right =    TextureManager::SNOW;
-        this->block_table.at(this->block_table.size() - 1).c_front =    TextureManager::SNOW;
-        this->block_table.at(this->block_table.size() - 1).c_back =     TextureManager::SNOW;
+        this->block_table[6] = b_look();
+        this->block_table[6].c_top =      TextureManager::SNOW;
+        this->block_table[6].c_bottom =   TextureManager::SNOW;
+        this->block_table[6].c_left =     TextureManager::SNOW;
+        this->block_table[6].c_right =    TextureManager::SNOW;
+        this->block_table[6].c_front =    TextureManager::SNOW;
+        this->block_table[6].c_back =     TextureManager::SNOW;
 
 
     }
@@ -303,7 +308,7 @@ using std::vector;
         Helper function which combindes face vertex array and face texture coordinate vector and pushes the vertices to chunk_verts
     */
 
-    void Chunk::pushToVertices(std::vector<float> eArray, std::vector<float> tc, std::vector<float> *c) {
+    void Chunk::pushToVertices(float eArray[], float tc[], std::vector<float>* c) {
 
       
       
@@ -314,12 +319,14 @@ using std::vector;
         {
 
             if (texc == 3 || texc == 4) {
-                this->chunk_verts.push_back(tc.at(tIndex));
+                this->bufferdata[bdPointer] = (tc[tIndex]);
+                bdPointer++;
                 tIndex++;  
             }
             else {
 
-                this->chunk_verts.push_back(eArray.at(index));
+                this->bufferdata[bdPointer] = (eArray[index]);
+                bdPointer++;
                 index++;
             }
                 
@@ -332,7 +339,7 @@ using std::vector;
            
         }
 
-        
+        faces++;
     }
 
     /*
@@ -350,25 +357,25 @@ using std::vector;
                    
                            b_look fb;
                            if (this->blocks[cCounter] == 'D')
-                               fb = this->block_table.at(0);
+                               fb = this->block_table[0];
                            if (this->blocks[cCounter] == 'G')
-                               fb = this->block_table.at(1);
+                               fb = this->block_table[1];
                            if (this->blocks[cCounter] == 'S')
-                               fb = this->block_table.at(2);
+                               fb = this->block_table[2];
                            if (this->blocks[cCounter] == 'L')
-                               fb = this->block_table.at(3);
+                               fb = this->block_table[3];
                            if (this->blocks[cCounter] == 'F')
-                               fb = this->block_table.at(4);
+                               fb = this->block_table[4];
                            if (this->blocks[cCounter] == 'B')
-                               fb = this->block_table.at(5);
+                               fb = this->block_table[5];
                            if (this->blocks[cCounter] == 'O')
-                               fb = this->block_table.at(6);
+                               fb = this->block_table[6];
                           
                             
                                if ((z == 0 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && (cCounter >= NEXT_LEFT && blocks[cCounter - NEXT_LEFT] == 'A'))) {
                                    //left face
                                    // v1, v2, v3, t1, t2, n1, n2 ,n3
-                                   std::vector<float> left_face = { -0.5f + x + posX,    -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
+                                   float left_face[] = {-0.5f + x + posX,    -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
                                                             0.5f + x + posX,    -0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
                                                             0.5f + x + posX,     0.5f + y + posY,     -0.5f + z + posZ,          0.0f, 0.0f, -1.0f,
 
@@ -387,7 +394,7 @@ using std::vector;
                                if ((z == 31 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < bSize - HEIGHT && blocks[cCounter + HEIGHT] == 'A')) {
                                    //right face
                                    //z=0
-                                   std::vector<float> right_face =  { -0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
+                                   float right_face[] = {-0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
                                                                      0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
                                                                      0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,      0.0f, 0.0f, 1.0f,
 
@@ -407,7 +414,7 @@ using std::vector;
                                if ((x == 31 && blocks[cCounter] != 'A') || (blocks[cCounter] != 'A' && cCounter < (bSize - NEXT_FRONT) && blocks[cCounter + NEXT_FRONT] == 'A')) {
                            
                                    
-                                       std::vector<float> front_face = { 0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
+                                       float front_face[] = {0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       1.0f, 0.0f, 0.0f,
                                                                                          
@@ -423,7 +430,7 @@ using std::vector;
                                // x = 0
                              
                                if ((x == 0 && blocks[cCounter] != 'A')  || (blocks[cCounter] != 'A' && cCounter > NEXT_FRONT && blocks[cCounter - NEXT_FRONT] == 'A')) {
-                                   std::vector<float> back_face = { -0.5f + x + posX,      0.5f + y + posY,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
+                                   float back_face[] = {-0.5f + x + posX,      0.5f + y + posY,     0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                            -0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       -1.0f, 0.0f, 0.0f,
                                                                                         
@@ -437,7 +444,7 @@ using std::vector;
                                }
                                if ((y == 31 && blocks[cCounter] != 'A') || blocks[cCounter] != 'A' && cCounter < bSize && blocks[cCounter + 1] == 'A') {
                                    //top
-                                   std::vector<float> top_face = { -0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
+                                   float top_face[] = {-0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
                                                          0.5f + x + posX,    0.5f + y + posY,    -0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
                                                          0.5f + x + posX,    0.5f + y + posY,     0.5f + z + posZ,        0.0f, 1.0f, 0.0f,
                                                                                       
@@ -451,7 +458,7 @@ using std::vector;
                                }
                                //bottom
                                if ((y == 0 && blocks[cCounter] != 'A') || blocks[cCounter] != 'A' && cCounter > 0 && blocks[cCounter - 1] == 'A') {
-                                   std::vector<float> bottom_face = { -0.5f + x + posX,    -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
+                                   float bottom_face[] = {-0.5f + x + posX,    -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y + posY,    -0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
                                                              0.5f + x + posX,   -0.5f + y + posY,     0.5f + z + posZ,       0.0f, -1.0f, 0.0f,
                                                                                          
@@ -480,9 +487,12 @@ using std::vector;
     }
 
     void Chunk::generateBufferData() {
-        if (this->chunk_verts.size() > 0) {
+        if (this->faces > 0) {
 
-            this->vertices = &(this->chunk_verts[0]);
+            this->vertices = (float*)malloc(this->faces * 48 * sizeof(float));
+            std::memcpy(this->vertices, this->bufferdata, static_cast<unsigned long long>(this->faces) * 48 * sizeof(float));
+            free(this->bufferdata);
+           
 
             glGenVertexArrays(1, &VAO);
             glGenBuffers(1, &VBO);
@@ -490,7 +500,7 @@ using std::vector;
             glBindVertexArray(VAO);
 
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
-            glBufferData(GL_ARRAY_BUFFER, this->vCount * 32, this->vertices, GL_STATIC_DRAW);
+            glBufferData(GL_ARRAY_BUFFER, this->faces * 48 * sizeof(float), this->vertices, GL_STATIC_DRAW);
 
 
             glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
@@ -501,6 +511,7 @@ using std::vector;
 
             glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(5 * sizeof(float)));
             glEnableVertexAttribArray(2);
+
 
         }
        
@@ -532,7 +543,7 @@ using std::vector;
 
     bool Chunk::drawChunk(glm::mat4 model, glm::mat4 projection, glm::mat4 view, glm::vec3 cameraPos) {
 
-        if (this->chunk_verts.size() > 0) {
+        if (this->faces > 0) {
             if (this->baked) {
 
                 if (!this->bGen) {
